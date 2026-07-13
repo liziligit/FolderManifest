@@ -1,0 +1,8 @@
+.build/
+.home/
+.xcode-derived/
+.DS_Store
+FolderManifest.app/
+DerivedData/
+xcuserdata/
+*.xcuserstate

@@ -1,0 +1,74 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F10000000000000000000001 /* FolderManifestApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000001 /* FolderManifestApp.swift */; };
+		F10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* ContentView.swift */; };
+		F10000000000000000000003 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000003 /* Models.swift */; };
+		F10000000000000000000004 /* FolderScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000004 /* FolderScanner.swift */; };
+		F10000000000000000000005 /* ManifestRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000005 /* ManifestRenderer.swift */; };
+		F10000000000000000000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000008 /* Assets.xcassets */; };
+		F10000000000000000000007 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000009 /* Localization.swift */; };
+		F10000000000000000000008 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000010 /* SettingsView.swift */; };
+		F10000000000000000000009 /* SelectableTreeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000011 /* SelectableTreeText.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		F20000000000000000000001 /* FolderManifestApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderManifestApp.swift; sourceTree = "<group>"; };
+		F20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		F20000000000000000000003 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		F20000000000000000000004 /* FolderScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderScanner.swift; sourceTree = "<group>"; };
+		F20000000000000000000005 /* ManifestRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManifestRenderer.swift; sourceTree = "<group>"; };
+		F20000000000000000000006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F20000000000000000000007 /* FolderManifest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FolderManifest.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F20000000000000000000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F20000000000000000000009 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		F20000000000000000000010 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F20000000000000000000011 /* SelectableTreeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTreeText.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F60000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F30000000000000000000001 = {isa = PBXGroup; children = (F30000000000000000000002 /* Sources */, F30000000000000000000003 /* AppResources */, F30000000000000000000004 /* Products */); sourceTree = "<group>"; };
+		F30000000000000000000002 /* Sources */ = {isa = PBXGroup; children = (F20000000000000000000001, F20000000000000000000002, F20000000000000000000003, F20000000000000000000004, F20000000000000000000005, F20000000000000000000009, F20000000000000000000010, F20000000000000000000011); path = Sources/FolderManifest; sourceTree = "<group>"; };
+		F30000000000000000000003 /* AppResources */ = {isa = PBXGroup; children = (F20000000000000000000006, F20000000000000000000008); path = AppResources; sourceTree = "<group>"; };
+		F30000000000000000000004 /* Products */ = {isa = PBXGroup; children = (F20000000000000000000007); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F40000000000000000000001 /* FolderManifest */ = {isa = PBXNativeTarget; buildConfigurationList = F80000000000000000000002; buildPhases = (F60000000000000000000002 /* Sources */, F60000000000000000000001 /* Frameworks */, F60000000000000000000003 /* Resources */); buildRules = (); dependencies = (); name = FolderManifest; productName = FolderManifest; productReference = F20000000000000000000007; productType = "com.apple.product-type.application"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F50000000000000000000001 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2600; LastUpgradeCheck = 2600; TargetAttributes = {F40000000000000000000001 = {CreatedOnToolsVersion = 26.0; }; }; }; buildConfigurationList = F80000000000000000000001; compatibilityVersion = "Xcode 14.0"; developmentRegion = zh_CN; hasScannedForEncodings = 0; knownRegions = (zh_CN, Base); mainGroup = F30000000000000000000001; productRefGroup = F30000000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (F40000000000000000000001); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F60000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (F10000000000000000000006); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F60000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (F10000000000000000000001, F10000000000000000000002, F10000000000000000000003, F10000000000000000000004, F10000000000000000000005, F10000000000000000000007, F10000000000000000000008, F10000000000000000000009); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F70000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+		F70000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; }; name = Release; };
+		F70000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = AppResources/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.foldermanifest.app; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; }; name = Debug; };
+		F70000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = AppResources/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.foldermanifest.app; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F80000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (F70000000000000000000001, F70000000000000000000002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F80000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (F70000000000000000000003, F70000000000000000000004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = F50000000000000000000001 /* Project object */;
+}
