@@ -10,6 +10,9 @@ struct ContentView: View {
     @State private var displayOptions = DisplayOptions()
     @State private var searchState = ManifestSearchState()
     @State private var isScanning = false
+    @State private var isShowingScanCompletion = false
+    @State private var discoveredItemCount = 0
+    @State private var currentScanID = UUID()
     @State private var isDropTargeted = false
     @State private var errorMessage: String?
     @State private var successMessage: String?
@@ -292,15 +295,8 @@ struct ContentView: View {
 
             Divider()
 
-            if isScanning {
-                VStack(spacing: 14) {
-                    ProgressView()
-                        .controlSize(.large)
-                    Text(strings.scanning)
-                        .font(.headline)
-                    Text(strings.scanningHint)
-                        .foregroundStyle(.secondary)
-                }
+            if isScanning || isShowingScanCompletion {
+                scanStatusView
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 GeometryReader { viewport in
@@ -318,7 +314,8 @@ struct ContentView: View {
                             }
                             .frame(
                                 minWidth: max(0, viewport.size.width - 44),
-                                alignment: .leading
+                                minHeight: max(0, viewport.size.height - 44),
+                                alignment: .topLeading
                             )
                             .padding(22)
                         }
@@ -334,6 +331,20 @@ struct ContentView: View {
                 .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: handleDrop)
             }
         }
+    }
+
+    private var scanStatusView: some View {
+        HStack(spacing: 7) {
+            Text(isScanning ? strings.scanning : strings.scanFinished)
+            RunningFigure(isRunning: isScanning)
+            Text(isScanning
+                ? strings.discoveredItems(discoveredItemCount)
+                : strings.totalDiscoveredItems(discoveredItemCount))
+                .contentTransition(.numericText())
+        }
+        .font(.headline)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
     }
 
     private func treeRow(
@@ -522,27 +533,58 @@ struct ContentView: View {
     }
 
     private func startScan(_ url: URL) {
+        let scanID = UUID()
+        currentScanID = scanID
         isScanning = true
+        isShowingScanCompletion = false
+        discoveredItemCount = 0
+        snapshot = nil
         errorMessage = nil
         searchState.reset()
         selectedURL = url
         let options = scanOptions
 
         Task {
+            let (progressStream, progressContinuation) = AsyncStream.makeStream(
+                of: Int.self,
+                bufferingPolicy: .bufferingNewest(1)
+            )
+            let progressTask = Task {
+                for await count in progressStream {
+                    guard currentScanID == scanID else { break }
+                    discoveredItemCount = count
+                }
+            }
+
             do {
                 let result = try await Task.detached(priority: .userInitiated) {
-                    try scanner.scan(url: url, options: options)
+                    try scanner.scan(url: url, options: options) { count in
+                        progressContinuation.yield(count)
+                    }
                 }.value
+                progressContinuation.finish()
+                await progressTask.value
+                guard currentScanID == scanID else { return }
                 snapshot = result
+                discoveredItemCount = result.fileCount + result.folderCount
+                isScanning = false
+                isShowingScanCompletion = true
+                try? await Task.sleep(for: .milliseconds(900))
+                guard currentScanID == scanID else { return }
+                isShowingScanCompletion = false
             } catch {
+                progressContinuation.finish()
+                progressTask.cancel()
+                guard currentScanID == scanID else { return }
                 snapshot = nil
                 if let failure = error as? ScanFailure {
                     errorMessage = localizedScanError(failure)
                 } else {
                     errorMessage = error.localizedDescription
                 }
+                isScanning = false
+                isShowingScanCompletion = false
             }
-            isScanning = false
         }
     }
 
@@ -621,5 +663,22 @@ struct ContentView: View {
         case .unreadable(let name):
             strings.unreadableError(name)
         }
+    }
+}
+
+private struct RunningFigure: View {
+    let isRunning: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.05, paused: !isRunning)) { timeline in
+            let phase = sin(timeline.date.timeIntervalSinceReferenceDate * 22)
+            Image(systemName: "figure.run")
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+                .rotationEffect(.degrees(isRunning ? phase * 5 : 0))
+                .offset(y: isRunning ? -abs(phase) * 3 : 0)
+        }
+        .frame(width: 20, height: 22)
+        .accessibilityHidden(true)
     }
 }

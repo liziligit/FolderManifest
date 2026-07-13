@@ -73,6 +73,10 @@ struct AppStrings: Sendable {
         }
     }
 
+    private func formattedCount(_ count: Int) -> String {
+        count.formatted(.number.locale(Locale(identifier: language.localeIdentifier)))
+    }
+
     var settings: String { text("设置", "設定", "Settings", "設定", "설정", "Ajustes", "Réglages", "Einstellungen", "Ajustes") }
     var languageLabel: String { text("界面语言", "介面語言", "Interface Language", "表示言語", "인터페이스 언어", "Idioma de la interfaz", "Langue de l’interface", "Oberflächensprache", "Idioma da interface") }
     var languageHint: String { text("选择后立即应用，并在下次启动时保留。", "選擇後立即套用，並在下次啟動時保留。", "Changes apply immediately and are kept for the next launch.", "選択内容はすぐに適用され、次回起動時にも保持されます。", "선택 즉시 적용되며 다음 실행 시에도 유지됩니다.", "Los cambios se aplican de inmediato y se conservan para el próximo inicio.", "Les changements s’appliquent immédiatement et sont conservés au prochain lancement.", "Änderungen werden sofort übernommen und für den nächsten Start gespeichert.", "As alterações são aplicadas imediatamente e mantidas na próxima abertura.") }
@@ -111,8 +115,8 @@ struct AppStrings: Sendable {
     var search: String { text("搜索", "搜尋", "Search", "検索", "검색", "Buscar", "Rechercher", "Suchen", "Buscar") }
     var previous: String { text("上一个", "上一個", "Previous", "前へ", "이전", "Anterior", "Précédent", "Zurück", "Anterior") }
     var next: String { text("下一个", "下一個", "Next", "次へ", "다음", "Siguiente", "Suivant", "Weiter", "Próximo") }
-    var scanning: String { text("正在读取文件夹…", "正在讀取資料夾…", "Reading folder…", "フォルダを読み込み中…", "폴더 읽는 중…", "Leyendo carpeta…", "Lecture du dossier…", "Ordner wird gelesen…", "Lendo pasta…") }
-    var scanningHint: String { text("文件较多时可能需要一点时间", "檔案較多時可能需要一些時間", "Folders with many files may take a moment", "ファイルが多い場合は少し時間がかかります", "파일이 많으면 시간이 조금 걸릴 수 있습니다", "Las carpetas con muchos archivos pueden tardar un poco", "Les dossiers contenant de nombreux fichiers peuvent prendre un moment", "Ordner mit vielen Dateien können etwas Zeit benötigen", "Pastas com muitos arquivos podem levar alguns instantes") }
+    var scanning: String { text("正在扫描", "正在掃描", "Scanning", "スキャン中", "스캔 중", "Escaneando", "Analyse en cours", "Scan läuft", "Escaneando") }
+    var scanFinished: String { text("扫描结束", "掃描結束", "Scan finished", "スキャン完了", "스캔 완료", "Escaneo finalizado", "Analyse terminée", "Scan beendet", "Escaneamento concluído") }
     var revealHelp: String { text("双击打开文件所在的文件夹", "按兩下開啟檔案所在的資料夾", "Double-click to open the containing folder", "ダブルクリックして保存場所を開く", "이중 클릭하여 포함된 폴더 열기", "Haz doble clic para abrir la carpeta contenedora", "Double-cliquez pour ouvrir le dossier parent", "Doppelklicken, um den übergeordneten Ordner zu öffnen", "Clique duas vezes para abrir a pasta que contém o arquivo") }
 
     var alertTitle: String { text("无法完成操作", "無法完成操作", "Unable to Complete Operation", "操作を完了できません", "작업을 완료할 수 없음", "No se puede completar la operación", "Impossible de terminer l’opération", "Vorgang kann nicht abgeschlossen werden", "Não foi possível concluir a operação") }
@@ -131,6 +135,15 @@ struct AppStrings: Sendable {
     func matchCount(_ count: Int) -> String { text("\(count) 个匹配", "\(count) 個相符項目", "\(count) matches", "\(count)件一致", "\(count)개 일치", "\(count) coincidencias", "\(count) correspondances", "\(count) Treffer", "\(count) correspondências") }
     func matchPosition(_ current: Int, total: Int) -> String { text("第 \(current) 个，共 \(total) 个匹配", "第 \(current) 個，共 \(total) 個相符項目", "Match \(current) of \(total)", "\(total)件中\(current)件目", "\(total)개 중 \(current)번째", "Coincidencia \(current) de \(total)", "Correspondance \(current) sur \(total)", "Treffer \(current) von \(total)", "Correspondência \(current) de \(total)") }
     func fileCount(_ count: Int) -> String { text("\(count) 个文件", "\(count) 個檔案", "\(count) files", "\(count)ファイル", "파일 \(count)개", "\(count) archivos", "\(count) fichiers", "\(count) Dateien", "\(count) arquivos") }
+    func discoveredItems(_ count: Int) -> String {
+        let value = formattedCount(count)
+        return text("，已发现 \(value) 个项目", "，已發現 \(value) 個項目", ", discovered \(value) items", "、\(value)件を検出", ", \(value)개 항목 발견", ", se encontraron \(value) elementos", " : \(value) éléments trouvés", ", \(value) Elemente gefunden", ", \(value) itens encontrados")
+    }
+
+    func totalDiscoveredItems(_ count: Int) -> String {
+        let value = formattedCount(count)
+        return text("，共发现 \(value) 个项目", "，共發現 \(value) 個項目", ", \(value) items found in total", "、合計\(value)件", ", 총 \(value)개 항목", ", \(value) elementos en total", " : \(value) éléments au total", ", insgesamt \(value) Elemente", ", \(value) itens no total")
+    }
     func exportFailure(_ detail: String) -> String { text("导出失败：\(detail)", "匯出失敗：\(detail)", "Export failed: \(detail)", "書き出しに失敗しました：\(detail)", "내보내기 실패: \(detail)", "Error de exportación: \(detail)", "Échec de l’export : \(detail)", "Export fehlgeschlagen: \(detail)", "Falha ao exportar: \(detail)") }
     func notFolderError() -> String { text("请选择一个文件夹，而不是单个文件。", "請選擇資料夾，而不是單一檔案。", "Choose a folder, not an individual file.", "ファイルではなくフォルダを選択してください。", "개별 파일이 아닌 폴더를 선택하세요.", "Elige una carpeta, no un archivo individual.", "Choisissez un dossier, pas un fichier individuel.", "Wählen Sie einen Ordner, keine einzelne Datei.", "Escolha uma pasta, não um arquivo individual.") }
     func unreadableError(_ name: String) -> String { text("无法读取“\(name)”。请确认文件夹仍然存在且具有访问权限。", "無法讀取「\(name)」。請確認資料夾仍然存在且具有存取權限。", "Unable to read “\(name)”. Make sure the folder still exists and you have permission to access it.", "「\(name)」を読み込めません。フォルダが存在し、アクセス権があることを確認してください。", "“\(name)”을(를) 읽을 수 없습니다. 폴더가 존재하고 접근 권한이 있는지 확인하세요.", "No se puede leer “\(name)”. Comprueba que la carpeta exista y que tengas permiso para acceder.", "Impossible de lire « \(name) ». Vérifiez que le dossier existe et que vous avez l’autorisation d’y accéder.", "„\(name)“ kann nicht gelesen werden. Prüfen Sie, ob der Ordner vorhanden ist und Sie Zugriffsrechte haben.", "Não foi possível ler “\(name)”. Verifique se a pasta existe e se você tem permissão de acesso.") }

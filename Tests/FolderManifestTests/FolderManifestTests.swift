@@ -28,6 +28,9 @@ final class FolderManifestTests: XCTestCase {
             XCTAssertFalse(strings.search.isEmpty)
             XCTAssertFalse(strings.previous.isEmpty)
             XCTAssertFalse(strings.next.isEmpty)
+            XCTAssertFalse(strings.scanFinished.isEmpty)
+            XCTAssertFalse(strings.discoveredItems(1).isEmpty)
+            XCTAssertFalse(strings.totalDiscoveredItems(1).isEmpty)
             XCTAssertFalse(strings.matchPosition(1, total: 2).isEmpty)
             XCTAssertFalse(strings.exportPanelTitle.isEmpty)
         }
@@ -54,11 +57,16 @@ final class FolderManifestTests: XCTestCase {
         try Data("pdf".utf8).write(to: subfolder.appendingPathComponent("课程.pdf"))
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let snapshot = try FolderScanner().scan(url: root, options: ScanOptions())
+        let progress = ScanProgressRecorder()
+        let snapshot = try FolderScanner().scan(url: root, options: ScanOptions()) {
+            progress.record($0)
+        }
 
         XCTAssertEqual(snapshot.fileCount, 2)
         XCTAssertEqual(snapshot.folderCount, 1)
         XCTAssertFalse(snapshot.root.children.contains { $0.name == ".secret" })
+        XCTAssertEqual(progress.values.last, snapshot.fileCount + snapshot.folderCount)
+        XCTAssertEqual(progress.values, progress.values.sorted())
     }
 
     func testRendererProducesStructuredTreeRowsAndMatchingTXT() {
@@ -273,5 +281,18 @@ final class FolderManifestTests: XCTestCase {
             row.fileURL(relativeTo: rootURL).path,
             "/Users/example/课程资料/第一周/讲义.pdf"
         )
+    }
+}
+
+private final class ScanProgressRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedValues: [Int] = []
+
+    var values: [Int] {
+        lock.withLock { recordedValues }
+    }
+
+    func record(_ value: Int) {
+        lock.withLock { recordedValues.append(value) }
     }
 }

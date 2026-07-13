@@ -8,18 +8,25 @@ struct FolderScanner: Sendable {
         .contentModificationDateKey
     ]
 
-    func scan(url: URL, options: ScanOptions) throws -> ManifestSnapshot {
+    func scan(
+        url: URL,
+        options: ScanOptions,
+        progress: (@Sendable (Int) -> Void)? = nil
+    ) throws -> ManifestSnapshot {
         let values = try url.resourceValues(forKeys: [.isDirectoryKey])
         guard values.isDirectory == true else { throw ScanFailure.notFolder }
 
         var skipped = 0
+        var progressReporter = ScanProgressReporter(handler: progress)
         let root = try makeNode(
             at: url,
             relativePath: url.lastPathComponent,
             depth: 0,
             options: options,
-            skipped: &skipped
+            skipped: &skipped,
+            progressReporter: &progressReporter
         )
+        progressReporter.finish()
         return ManifestSnapshot(root: root, skippedCount: skipped)
     }
 
@@ -28,10 +35,12 @@ struct FolderScanner: Sendable {
         relativePath: String,
         depth: Int,
         options: ScanOptions,
-        skipped: inout Int
+        skipped: inout Int,
+        progressReporter: inout ScanProgressReporter
     ) throws -> ManifestNode {
         let values = try url.resourceValues(forKeys: keys)
         let isDirectory = values.isDirectory == true
+        if depth > 0 { progressReporter.discoveredItem() }
 
         var children: [ManifestNode] = []
         if isDirectory && (depth == 0 || options.includeSubfolders) {
@@ -58,7 +67,8 @@ struct FolderScanner: Sendable {
                         relativePath: childPath,
                         depth: depth + 1,
                         options: options,
-                        skipped: &skipped
+                        skipped: &skipped,
+                        progressReporter: &progressReporter
                     ))
                 } catch {
                     skipped += 1
@@ -108,5 +118,28 @@ struct FolderScanner: Sendable {
             if left.totalSize != right.totalSize { return left.totalSize > right.totalSize }
         }
         return left.name.localizedStandardCompare(right.name) == .orderedAscending
+    }
+}
+
+private struct ScanProgressReporter {
+    let handler: (@Sendable (Int) -> Void)?
+    private(set) var count = 0
+    private var lastReportTime = Date.distantPast
+
+    init(handler: (@Sendable (Int) -> Void)?) {
+        self.handler = handler
+    }
+
+    mutating func discoveredItem() {
+        count += 1
+        guard count == 1 || count.isMultiple(of: 32) else { return }
+        let now = Date()
+        guard count == 1 || now.timeIntervalSince(lastReportTime) >= 0.15 else { return }
+        lastReportTime = now
+        handler?(count)
+    }
+
+    func finish() {
+        handler?(count)
     }
 }
