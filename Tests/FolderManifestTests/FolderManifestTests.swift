@@ -148,10 +148,12 @@ final class FolderManifestTests: XCTestCase {
 
         let pdfMatches = try renderer.search(snapshot: snapshot, pattern: #"第一周/.+\.pdf$"#)
         let folderMatches = try renderer.search(snapshot: snapshot, pattern: "第一周$")
+        let parentKeywordMatches = try renderer.search(snapshot: snapshot, pattern: "第一周")
 
         XCTAssertEqual(pdfMatches.map(\.path), ["课程资料/第一周/讲义.PDF"])
         XCTAssertFalse(pdfMatches[0].matchRanges.isEmpty)
         XCTAssertEqual(folderMatches.map(\.path), ["课程资料/第一周"])
+        XCTAssertEqual(parentKeywordMatches.map(\.path), ["课程资料/第一周"])
         XCTAssertThrowsError(try renderer.search(snapshot: snapshot, pattern: "[未闭合"))
     }
 

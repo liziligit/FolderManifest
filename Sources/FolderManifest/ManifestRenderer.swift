@@ -66,7 +66,11 @@ struct ManifestRenderer {
         matches: inout [ManifestSearchMatch]
     ) {
         let range = NSRange(path.startIndex..<path.endIndex, in: path)
-        let results = expression.matches(in: path, range: range)
+        let nameLength = (node.name as NSString).length
+        let nameRange = NSRange(location: range.length - nameLength, length: nameLength)
+        let results = expression.matches(in: path, range: range).filter {
+            NSIntersectionRange($0.range, nameRange).length > 0
+        }
         if !results.isEmpty {
             matches.append(ManifestSearchMatch(
                 path: path,
