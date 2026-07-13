@@ -168,13 +168,13 @@ struct ContentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 settingSection(strings.scanScope, icon: "folder") {
-                    Toggle(strings.includeSubfolders, isOn: optionBinding(\.includeSubfolders))
-                    Toggle(strings.includeHidden, isOn: optionBinding(\.includeHidden))
-                    Toggle(strings.foldersFirst, isOn: optionBinding(\.foldersFirst))
+                    Toggle(strings.includeSubfolders, isOn: scanOptionBinding(\.includeSubfolders))
+                    Toggle(strings.includeHidden, isOn: scanOptionBinding(\.includeHidden))
+                    Toggle(strings.foldersFirst, isOn: orderingBinding(\.foldersFirst))
                 }
 
                 settingSection(strings.sortBy, icon: "arrow.up.arrow.down") {
-                    Picker(strings.sortBy, selection: optionBinding(\.sort)) {
+                    Picker(strings.sortBy, selection: orderingBinding(\.sort)) {
                         ForEach(ManifestSort.allCases) { option in
                             Text(strings.sortName(option)).tag(option)
                         }
@@ -478,7 +478,7 @@ struct ContentView: View {
             .shadow(radius: 10, y: 4)
     }
 
-    private func optionBinding<Value>(_ keyPath: WritableKeyPath<ScanOptions, Value>) -> Binding<Value> {
+    private func scanOptionBinding<Value>(_ keyPath: WritableKeyPath<ScanOptions, Value>) -> Binding<Value> {
         Binding(
             get: { scanOptions[keyPath: keyPath] },
             set: { value in
@@ -486,6 +486,23 @@ struct ContentView: View {
                 rescan()
             }
         )
+    }
+
+    private func orderingBinding<Value>(_ keyPath: WritableKeyPath<ScanOptions, Value>) -> Binding<Value> {
+        Binding(
+            get: { scanOptions[keyPath: keyPath] },
+            set: { value in
+                scanOptions[keyPath: keyPath] = value
+                reorderTree()
+            }
+        )
+    }
+
+    private func reorderTree() {
+        guard let snapshot else { return }
+        let reorderedSnapshot = ManifestOrdering.sorted(snapshot: snapshot, options: scanOptions)
+        self.snapshot = reorderedSnapshot
+        searchState.refresh(snapshot: reorderedSnapshot, renderer: renderer)
     }
 
     private func displayBinding<Value>(_ keyPath: WritableKeyPath<DisplayOptions, Value>) -> Binding<Value> {
@@ -565,7 +582,7 @@ struct ContentView: View {
                 progressContinuation.finish()
                 await progressTask.value
                 guard currentScanID == scanID else { return }
-                snapshot = result
+                snapshot = ManifestOrdering.sorted(snapshot: result, options: scanOptions)
                 discoveredItemCount = result.fileCount + result.folderCount
                 isScanning = false
                 isShowingScanCompletion = true

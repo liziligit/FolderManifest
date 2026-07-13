@@ -53,6 +53,57 @@ struct ManifestSnapshot: Sendable, Equatable {
     var totalSize: Int64 { root.totalSize }
 }
 
+enum ManifestOrdering {
+    static func sorted(snapshot: ManifestSnapshot, options: ScanOptions) -> ManifestSnapshot {
+        ManifestSnapshot(
+            root: sorted(node: snapshot.root, options: options),
+            skippedCount: snapshot.skippedCount
+        )
+    }
+
+    static func comesBefore(
+        _ left: ManifestNode,
+        _ right: ManifestNode,
+        options: ScanOptions
+    ) -> Bool {
+        if options.foldersFirst && left.isDirectory != right.isDirectory {
+            return left.isDirectory
+        }
+
+        switch options.sort {
+        case .name:
+            return left.name.localizedStandardCompare(right.name) == .orderedAscending
+        case .type:
+            let leftType = (left.name as NSString).pathExtension
+            let rightType = (right.name as NSString).pathExtension
+            if leftType != rightType {
+                return leftType.localizedStandardCompare(rightType) == .orderedAscending
+            }
+        case .modified:
+            if left.modifiedDate != right.modifiedDate {
+                return (left.modifiedDate ?? .distantPast) > (right.modifiedDate ?? .distantPast)
+            }
+        case .size:
+            if left.totalSize != right.totalSize { return left.totalSize > right.totalSize }
+        }
+        return left.name.localizedStandardCompare(right.name) == .orderedAscending
+    }
+
+    private static func sorted(node: ManifestNode, options: ScanOptions) -> ManifestNode {
+        let children = node.children
+            .map { sorted(node: $0, options: options) }
+            .sorted { comesBefore($0, $1, options: options) }
+        return ManifestNode(
+            id: node.id,
+            name: node.name,
+            isDirectory: node.isDirectory,
+            size: node.size,
+            modifiedDate: node.modifiedDate,
+            children: children
+        )
+    }
+}
+
 struct ManifestSearchMatch: Identifiable, Sendable, Equatable {
     let path: String
     let node: ManifestNode
@@ -128,6 +179,24 @@ struct ManifestSearchState: Sendable, Equatable {
     ) {
         updateDraft(selectedText)
         submit(snapshot: snapshot, renderer: renderer)
+    }
+
+    mutating func refresh(snapshot: ManifestSnapshot, renderer: ManifestRenderer) {
+        guard !committedPattern.isEmpty else { return }
+        let selectedID = selectedMatchID
+
+        do {
+            matches = try renderer.search(snapshot: snapshot, pattern: committedPattern)
+            selectedIndex = selectedID.flatMap { id in
+                matches.firstIndex { $0.id == id }
+            } ?? (matches.isEmpty ? nil : 0)
+            regexErrorDescription = nil
+            if selectedIndex != nil { navigationRevision += 1 }
+        } catch {
+            matches = []
+            selectedIndex = nil
+            regexErrorDescription = error.localizedDescription
+        }
     }
 
     mutating func selectPrevious() {

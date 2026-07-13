@@ -99,6 +99,46 @@ final class FolderManifestTests: XCTestCase {
         XCTAssertTrue(tree.contains("1 个文件"))
     }
 
+    func testManifestOrderingSortsEachFolderEntirelyInMemory() {
+        let nestedB = ManifestNode(id: "root/folder/b.txt", name: "b.txt", isDirectory: false, size: 5, modifiedDate: nil, children: [])
+        let nestedA = ManifestNode(id: "root/folder/a.txt", name: "a.txt", isDirectory: false, size: 10, modifiedDate: nil, children: [])
+        let folder = ManifestNode(id: "root/folder", name: "folder", isDirectory: true, size: 0, modifiedDate: nil, children: [nestedB, nestedA])
+        let smallFile = ManifestNode(id: "root/small.pdf", name: "small.pdf", isDirectory: false, size: 20, modifiedDate: nil, children: [])
+        let largeFile = ManifestNode(id: "root/large.txt", name: "large.txt", isDirectory: false, size: 100, modifiedDate: nil, children: [])
+        let root = ManifestNode(id: "root", name: "root", isDirectory: true, size: 0, modifiedDate: nil, children: [smallFile, largeFile, folder])
+        let snapshot = ManifestSnapshot(root: root, skippedCount: 0)
+
+        var nameOptions = ScanOptions()
+        nameOptions.sort = .name
+        let nameSorted = ManifestOrdering.sorted(snapshot: snapshot, options: nameOptions)
+        XCTAssertEqual(nameSorted.root.children.map(\.name), ["folder", "large.txt", "small.pdf"])
+        XCTAssertEqual(nameSorted.root.children[0].children.map(\.name), ["a.txt", "b.txt"])
+
+        var sizeOptions = ScanOptions()
+        sizeOptions.foldersFirst = false
+        sizeOptions.sort = .size
+        let sizeSorted = ManifestOrdering.sorted(snapshot: snapshot, options: sizeOptions)
+        XCTAssertEqual(sizeSorted.root.children.map(\.name), ["large.txt", "small.pdf", "folder"])
+    }
+
+    func testSearchResultsFollowInMemoryOrderAndKeepCurrentMatch() {
+        let fileZ = ManifestNode(id: "root/z.txt", name: "z.txt", isDirectory: false, size: 0, modifiedDate: nil, children: [])
+        let fileA = ManifestNode(id: "root/a.txt", name: "a.txt", isDirectory: false, size: 0, modifiedDate: nil, children: [])
+        let root = ManifestNode(id: "root", name: "root", isDirectory: true, size: 0, modifiedDate: nil, children: [fileZ, fileA])
+        let snapshot = ManifestSnapshot(root: root, skippedCount: 0)
+        let renderer = ManifestRenderer()
+        var state = ManifestSearchState(draftPattern: #"\.txt$"#)
+        state.submit(snapshot: snapshot, renderer: renderer)
+        XCTAssertEqual(state.selectedMatchID, "root/z.txt")
+
+        let sortedSnapshot = ManifestOrdering.sorted(snapshot: snapshot, options: ScanOptions())
+        state.refresh(snapshot: sortedSnapshot, renderer: renderer)
+
+        XCTAssertEqual(state.matches.map(\.id), ["root/a.txt", "root/z.txt"])
+        XCTAssertEqual(state.selectedMatchID, "root/z.txt")
+        XCTAssertEqual(state.selectedPosition, 2)
+    }
+
     func testTXTRenderPreservesSpecialCharacters() {
         let file = ManifestNode(
             id: "root/a,b\"c.txt",

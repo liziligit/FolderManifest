@@ -74,7 +74,7 @@ struct FolderScanner: Sendable {
                     skipped += 1
                 }
             }
-            children.sort { comesBefore($0, $1, options: options) }
+            children.sort { ManifestOrdering.comesBefore($0, $1, options: options) }
         }
 
         return node(url: url, path: relativePath, values: values, children: children)
@@ -96,29 +96,6 @@ struct FolderScanner: Sendable {
         )
     }
 
-    private func comesBefore(_ left: ManifestNode, _ right: ManifestNode, options: ScanOptions) -> Bool {
-        if options.foldersFirst && left.isDirectory != right.isDirectory {
-            return left.isDirectory
-        }
-
-        switch options.sort {
-        case .name:
-            return left.name.localizedStandardCompare(right.name) == .orderedAscending
-        case .type:
-            let leftType = (left.name as NSString).pathExtension
-            let rightType = (right.name as NSString).pathExtension
-            if leftType != rightType {
-                return leftType.localizedStandardCompare(rightType) == .orderedAscending
-            }
-        case .modified:
-            if left.modifiedDate != right.modifiedDate {
-                return (left.modifiedDate ?? .distantPast) > (right.modifiedDate ?? .distantPast)
-            }
-        case .size:
-            if left.totalSize != right.totalSize { return left.totalSize > right.totalSize }
-        }
-        return left.name.localizedStandardCompare(right.name) == .orderedAscending
-    }
 }
 
 private struct ScanProgressReporter {
