@@ -8,7 +8,7 @@
 - `AppReviewNotes.md`：提供给 Apple 审核人员的操作说明。
 - `PrivacyPolicy.md`：FolderManifest 隐私政策正文。
 - `Support.md`：系统要求、使用方法和常见问题。
-- `screenshots/README.md`：截图场景、命名和拍摄检查清单。
+- `screenshots/README.md`：已有截图的用途、画面说明和提交检查清单。
 
 ## 提交前待办
 
@@ -19,7 +19,8 @@
 - [ ] 只申请实际需要的“用户选择的文件”读写权限，完成沙盒环境测试。
 - [ ] 确认 App 名称、SKU、类别、价格、版权和审核联系方式。
 - [ ] 确认技术支持与隐私政策网址可以在未登录状态下访问。
-- [ ] 使用准备提交的正式版本拍摄商店截图，并逐项检查隐私信息。
+- [x] 已加入两张 `2560×1600` 的 16:10 App Store 展示图和一张实际软件截图。
+- [ ] 提交前使用最终 Release 版本逐张复核界面、示例路径、隐私信息和 App Store Connect 当前尺寸要求。
 - [ ] 核对 App Store Connect 中的 App 隐私回答与最终构建行为完全一致。
 - [ ] 在 Xcode 中通过 `Product → Archive` 创建、验证并上传正式构建。
 
