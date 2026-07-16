@@ -53,6 +53,28 @@ struct ManifestSnapshot: Sendable, Equatable, Codable {
     var totalSize: Int64 { root.totalSize }
 }
 
+enum ManifestVisibility {
+    static func foldersOnly(snapshot: ManifestSnapshot) -> ManifestSnapshot {
+        ManifestSnapshot(
+            root: foldersOnly(node: snapshot.root),
+            skippedCount: snapshot.skippedCount
+        )
+    }
+
+    private static func foldersOnly(node: ManifestNode) -> ManifestNode {
+        ManifestNode(
+            id: node.id,
+            name: node.name,
+            isDirectory: node.isDirectory,
+            size: node.size,
+            modifiedDate: node.modifiedDate,
+            children: node.children
+                .filter(\.isDirectory)
+                .map(foldersOnly)
+        )
+    }
+}
+
 enum ManifestOrdering {
     static func sorted(snapshot: ManifestSnapshot, options: ScanOptions) -> ManifestSnapshot {
         ManifestSnapshot(

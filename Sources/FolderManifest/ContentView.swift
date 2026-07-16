@@ -24,13 +24,20 @@ struct ContentView: View {
     private var renderer: ManifestRenderer { ManifestRenderer(strings: strings) }
 
     private var output: String {
-        guard let snapshot else { return "" }
+        guard let snapshot = visibleSnapshot else { return "" }
         return renderer.render(snapshot: snapshot, display: displayOptions)
     }
 
     private var treeRows: [ManifestTreeRow] {
-        guard let snapshot else { return [] }
+        guard let snapshot = visibleSnapshot else { return [] }
         return renderer.treeRows(snapshot: snapshot, display: displayOptions)
+    }
+
+    private var visibleSnapshot: ManifestSnapshot? {
+        guard let snapshot else { return nil }
+        return scanOptions.includeSubfolders
+            ? snapshot
+            : ManifestVisibility.foldersOnly(snapshot: snapshot)
     }
 
     private var matchesByID: [String: ManifestSearchMatch] {
@@ -176,7 +183,7 @@ struct ContentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 settingSection(strings.scanScope, icon: "folder") {
-                    Toggle(strings.includeSubfolders, isOn: scanOptionBinding(\.includeSubfolders))
+                    Toggle(strings.includeSubfolders, isOn: includeSubfoldersBinding)
                     Toggle(strings.includeHidden, isOn: scanOptionBinding(\.includeHidden))
                     Toggle(strings.foldersFirst, isOn: orderingBinding(\.foldersFirst))
                 }
@@ -223,6 +230,17 @@ struct ContentView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
 
+                    HStack(spacing: 0) {
+                        Text(strings.pinnedCountPrefix)
+                        Text("\(recentStore.pinnedFolderCount)")
+                            .monospacedDigit()
+                            .frame(width: 18, alignment: .trailing)
+                        Text(strings.pinnedCountSuffix)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize()
+
                     Spacer()
 
                     Button {
@@ -267,7 +285,7 @@ struct ContentView: View {
     private var previewPanel: some View {
         VStack(spacing: 0) {
             HStack(spacing: 18) {
-                if let snapshot {
+                if let snapshot = visibleSnapshot {
                     statistic("\(snapshot.fileCount)", strings.files, icon: "doc")
                     statistic("\(snapshot.folderCount)", strings.folders, icon: "folder")
                     statistic(renderer.sizeText(snapshot.totalSize), strings.totalSize, icon: "externaldrive")
@@ -549,7 +567,12 @@ struct ContentView: View {
                     .foregroundStyle(entry.isPinned ? Color.accentColor : Color.secondary)
             }
             .buttonStyle(.plain)
-            .help(entry.isPinned ? strings.unpinFolder : strings.pinFolder)
+            .disabled(!recentStore.canTogglePin(path: entry.path))
+            .help(entry.isPinned
+                ? strings.unpinFolder
+                : (recentStore.canTogglePin(path: entry.path)
+                    ? strings.pinFolder
+                    : strings.pinnedLimitReached))
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 5)
@@ -592,6 +615,25 @@ struct ContentView: View {
         )
     }
 
+    private var includeSubfoldersBinding: Binding<Bool> {
+        Binding(
+            get: { scanOptions.includeSubfolders },
+            set: { value in
+                scanOptions.includeSubfolders = value
+                if let selectedURL, let snapshot {
+                    recentStore.updateCurrent(
+                        path: selectedURL.path(percentEncoded: false),
+                        snapshot: snapshot,
+                        options: scanOptions
+                    )
+                }
+                if let visibleSnapshot {
+                    searchState.refresh(snapshot: visibleSnapshot, renderer: renderer)
+                }
+            }
+        )
+    }
+
     private func orderingBinding<Value>(_ keyPath: WritableKeyPath<ScanOptions, Value>) -> Binding<Value> {
         Binding(
             get: { scanOptions[keyPath: keyPath] },
@@ -613,7 +655,9 @@ struct ContentView: View {
                 options: scanOptions
             )
         }
-        searchState.refresh(snapshot: reorderedSnapshot, renderer: renderer)
+        if let visibleSnapshot {
+            searchState.refresh(snapshot: visibleSnapshot, renderer: renderer)
+        }
     }
 
     private func displayBinding<Value>(_ keyPath: WritableKeyPath<DisplayOptions, Value>) -> Binding<Value> {
@@ -685,7 +729,11 @@ struct ContentView: View {
         searchState.reset()
         selectedURL = url
         selectedRecentPath = url.path(percentEncoded: false)
-        let options = scanOptions
+        let scanOptionsForDisk: ScanOptions = {
+            var options = scanOptions
+            options.includeSubfolders = true
+            return options
+        }()
 
         Task {
             let hasSecurityScope = url.startAccessingSecurityScopedResource()
@@ -705,7 +753,7 @@ struct ContentView: View {
 
             do {
                 let result = try await Task.detached(priority: .userInitiated) {
-                    try scanner.scan(url: url, options: options) { count in
+                    try scanner.scan(url: url, options: scanOptionsForDisk) { count in
                         progressContinuation.yield(count)
                     }
                 }.value
@@ -777,12 +825,12 @@ struct ContentView: View {
     }
 
     private func performSearch() {
-        guard let snapshot, !isScanning else { return }
+        guard let snapshot = visibleSnapshot, !isScanning else { return }
         searchState.submit(snapshot: snapshot, renderer: renderer)
     }
 
     private func performSelectedTextSearch(_ selectedText: String) {
-        guard let snapshot, !isScanning else { return }
+        guard let snapshot = visibleSnapshot, !isScanning else { return }
         searchState.submitSelectedText(selectedText, snapshot: snapshot, renderer: renderer)
     }
 

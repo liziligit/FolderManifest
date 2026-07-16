@@ -46,7 +46,10 @@ final class RecentFolderStore: ObservableObject {
     @Published private(set) var entries: [RecentFolderEntry]
 
     private let storageURL: URL
-    private let maximumUnpinnedCount = 20
+    private static let maximumPinnedCount = 25
+    private static let maximumUnpinnedCount = 25
+
+    var pinnedFolderCount: Int { pinnedCount }
 
     init(storageURL: URL? = nil) {
         self.storageURL = storageURL ?? Self.defaultStorageURL
@@ -89,11 +92,17 @@ final class RecentFolderStore: ObservableObject {
 
     func togglePin(path: String) {
         guard let index = entries.firstIndex(where: { $0.path == path }) else { return }
+        guard entries[index].isPinned || pinnedCount < Self.maximumPinnedCount else { return }
         let oldEntry = entries.remove(at: index)
         let updatedEntry = copy(oldEntry, isPinned: !oldEntry.isPinned)
         entries.insert(updatedEntry, at: pinnedCount)
         trimUnpinnedEntries()
         save()
+    }
+
+    func canTogglePin(path: String) -> Bool {
+        guard let entry = entries.first(where: { $0.path == path }) else { return false }
+        return entry.isPinned || pinnedCount < Self.maximumPinnedCount
     }
 
     func canMovePinned(path: String?, by offset: Int) -> Bool {
@@ -156,9 +165,9 @@ final class RecentFolderStore: ObservableObject {
         guard let data = try? Data(contentsOf: url),
               let entries = try? PropertyListDecoder().decode([RecentFolderEntry].self, from: data)
         else { return [] }
-        let pinned = entries.filter(\.isPinned)
-        let unpinned = entries.filter { !$0.isPinned }.prefix(20)
-        return pinned + unpinned
+        let pinned = entries.filter(\.isPinned).prefix(maximumPinnedCount)
+        let unpinned = entries.filter { !$0.isPinned }.prefix(maximumUnpinnedCount)
+        return Array(pinned) + Array(unpinned)
     }
 
     private var pinnedCount: Int {
@@ -166,9 +175,9 @@ final class RecentFolderStore: ObservableObject {
     }
 
     private func trimUnpinnedEntries() {
-        let pinned = entries.filter(\.isPinned)
-        let unpinned = entries.filter { !$0.isPinned }.prefix(maximumUnpinnedCount)
-        entries = pinned + unpinned
+        let pinned = entries.filter(\.isPinned).prefix(Self.maximumPinnedCount)
+        let unpinned = entries.filter { !$0.isPinned }.prefix(Self.maximumUnpinnedCount)
+        entries = Array(pinned) + Array(unpinned)
     }
 
     private func copy(_ entry: RecentFolderEntry, isPinned: Bool) -> RecentFolderEntry {

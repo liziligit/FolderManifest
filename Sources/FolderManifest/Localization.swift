@@ -100,8 +100,11 @@ struct AppStrings: Sendable {
     var sortBy: String { text("排序方式", "排序方式", "Sort By", "並べ替え", "정렬 기준", "Ordenar por", "Trier par", "Sortieren nach", "Ordenar por") }
     var recentlyOpened: String { text("最近打开", "最近開啟", "Recently Opened", "最近開いた項目", "최근에 연 폴더", "Abiertos recientemente", "Ouverts récemment", "Zuletzt geöffnet", "Abertos recentemente") }
     var noRecentFolders: String { text("暂无记录", "暫無記錄", "No recent folders", "履歴はありません", "최근 폴더 없음", "No hay carpetas recientes", "Aucun dossier récent", "Keine zuletzt geöffneten Ordner", "Nenhuma pasta recente") }
+    var pinnedCountPrefix: String { text("已固定", "已固定", "Pinned ", "固定 ", "고정 ", "Fijadas ", "Épinglés ", "Angeheftet ", "Fixadas ") }
+    var pinnedCountSuffix: String { text("个", "個", "", "件", "개", "", "", "", "") }
     var pinFolder: String { text("固定文件夹", "固定資料夾", "Pin Folder", "フォルダを固定", "폴더 고정", "Fijar carpeta", "Épingler le dossier", "Ordner anheften", "Fixar pasta") }
     var unpinFolder: String { text("取消固定", "取消固定", "Unpin Folder", "固定を解除", "폴더 고정 해제", "Desfijar carpeta", "Désépingler le dossier", "Ordner lösen", "Desafixar pasta") }
+    var pinnedLimitReached: String { text("最多固定 25 个文件夹", "最多固定 25 個資料夾", "Up to 25 folders can be pinned", "固定できるフォルダは25件までです", "폴더는 최대 25개까지 고정할 수 있습니다", "Se pueden fijar hasta 25 carpetas", "Vous pouvez épingler jusqu’à 25 dossiers", "Es können bis zu 25 Ordner angeheftet werden", "É possível fixar até 25 pastas") }
     var movePinnedUp: String { text("上移固定文件夹", "上移固定資料夾", "Move Pinned Folder Up", "固定フォルダを上へ", "고정 폴더 위로 이동", "Subir carpeta fijada", "Monter le dossier épinglé", "Angehefteten Ordner nach oben", "Mover pasta fixada para cima") }
     var movePinnedDown: String { text("下移固定文件夹", "下移固定資料夾", "Move Pinned Folder Down", "固定フォルダを下へ", "고정 폴더 아래로 이동", "Bajar carpeta fijada", "Descendre le dossier épinglé", "Angehefteten Ordner nach unten", "Mover pasta fixada para baixo") }
     var displayInformation: String { text("显示信息", "顯示資訊", "Display Information", "表示情報", "표시 정보", "Información mostrada", "Informations affichées", "Angezeigte Informationen", "Informações exibidas") }

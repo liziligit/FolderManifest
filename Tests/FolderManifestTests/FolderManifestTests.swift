@@ -26,8 +26,10 @@ final class FolderManifestTests: XCTestCase {
             XCTAssertFalse(strings.showMainWindow.isEmpty)
             XCTAssertFalse(strings.recentlyOpened.isEmpty)
             XCTAssertFalse(strings.noRecentFolders.isEmpty)
+            XCTAssertFalse(strings.pinnedCountPrefix.isEmpty)
             XCTAssertFalse(strings.pinFolder.isEmpty)
             XCTAssertFalse(strings.unpinFolder.isEmpty)
+            XCTAssertFalse(strings.pinnedLimitReached.isEmpty)
             XCTAssertFalse(strings.movePinnedUp.isEmpty)
             XCTAssertFalse(strings.movePinnedDown.isEmpty)
             XCTAssertFalse(strings.selectFolder.isEmpty)
@@ -108,14 +110,14 @@ final class FolderManifestTests: XCTestCase {
     }
 
     @MainActor
-    func testRecentFolderStoreKeepsTwentyUnpinnedFolders() {
+    func testRecentFolderStoreKeepsTwentyFiveUnpinnedFolders() {
         let storageURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathComponent("RecentFolders.plist")
         defer { try? FileManager.default.removeItem(at: storageURL.deletingLastPathComponent()) }
         let store = RecentFolderStore(storageURL: storageURL)
 
-        for index in 1...25 {
+        for index in 1...30 {
             let name = "folder-\(index)"
             store.record(
                 url: URL(fileURLWithPath: "/tmp/\(name)", isDirectory: true),
@@ -124,9 +126,49 @@ final class FolderManifestTests: XCTestCase {
             )
         }
 
-        XCTAssertEqual(store.entries.count, 20)
-        XCTAssertEqual(store.entries.first?.name, "folder-25")
+        XCTAssertEqual(store.entries.count, 25)
+        XCTAssertEqual(store.entries.first?.name, "folder-30")
         XCTAssertEqual(store.entries.last?.name, "folder-6")
+    }
+
+    @MainActor
+    func testPinnedFolderLimitIsTwentyFiveAndUnpinRestoresPinning() {
+        let storageURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("RecentFolders.plist")
+        defer { try? FileManager.default.removeItem(at: storageURL.deletingLastPathComponent()) }
+        let store = RecentFolderStore(storageURL: storageURL)
+
+        for index in 1...25 {
+            let name = "pinned-\(index)"
+            store.record(
+                url: URL(fileURLWithPath: "/tmp/\(name)", isDirectory: true),
+                snapshot: testSnapshot(rootName: name),
+                options: ScanOptions()
+            )
+            let path = store.entries.first { $0.name == name }!.path
+            store.togglePin(path: path)
+        }
+
+        store.record(
+            url: URL(fileURLWithPath: "/tmp/candidate", isDirectory: true),
+            snapshot: testSnapshot(rootName: "candidate"),
+            options: ScanOptions()
+        )
+        let candidatePath = store.entries.first { $0.name == "candidate" }!.path
+
+        XCTAssertEqual(store.pinnedFolderCount, 25)
+        XCTAssertFalse(store.canTogglePin(path: candidatePath))
+        store.togglePin(path: candidatePath)
+        XCTAssertFalse(store.entries.first { $0.path == candidatePath }!.isPinned)
+
+        let pinnedPath = store.entries.first { $0.isPinned }!.path
+        store.togglePin(path: pinnedPath)
+        XCTAssertEqual(store.pinnedFolderCount, 24)
+        XCTAssertTrue(store.canTogglePin(path: candidatePath))
+        store.togglePin(path: candidatePath)
+        XCTAssertEqual(store.pinnedFolderCount, 25)
+        XCTAssertTrue(store.entries.first { $0.path == candidatePath }!.isPinned)
     }
 
     private func testSnapshot(rootName: String) -> ManifestSnapshot {
@@ -226,6 +268,24 @@ final class FolderManifestTests: XCTestCase {
         sizeOptions.sort = .size
         let sizeSorted = ManifestOrdering.sorted(snapshot: snapshot, options: sizeOptions)
         XCTAssertEqual(sizeSorted.root.children.map(\.name), ["large.txt", "small.pdf", "folder"])
+    }
+
+    func testFolderOnlyVisibilityFiltersFilesWithoutChangingOriginalSnapshot() {
+        let nestedFile = ManifestNode(id: "root/folder/nested.txt", name: "nested.txt", isDirectory: false, size: 1, modifiedDate: nil, children: [])
+        let folder = ManifestNode(id: "root/folder", name: "folder", isDirectory: true, size: 0, modifiedDate: nil, children: [nestedFile])
+        let rootFile = ManifestNode(id: "root/root.txt", name: "root.txt", isDirectory: false, size: 1, modifiedDate: nil, children: [])
+        let snapshot = ManifestSnapshot(
+            root: ManifestNode(id: "root", name: "root", isDirectory: true, size: 0, modifiedDate: nil, children: [folder, rootFile]),
+            skippedCount: 0
+        )
+
+        let foldersOnly = ManifestVisibility.foldersOnly(snapshot: snapshot)
+
+        XCTAssertEqual(foldersOnly.root.children.map(\.name), ["folder"])
+        XCTAssertTrue(foldersOnly.root.children[0].children.isEmpty)
+        XCTAssertEqual(foldersOnly.fileCount, 0)
+        XCTAssertEqual(snapshot.fileCount, 2)
+        XCTAssertEqual(snapshot.root.children[0].children.first?.name, "nested.txt")
     }
 
     func testSearchResultsFollowInMemoryOrderAndKeepCurrentMatch() {
