@@ -1,6 +1,6 @@
 import Foundation
 
-enum ManifestSort: String, CaseIterable, Identifiable, Sendable {
+enum ManifestSort: String, CaseIterable, Identifiable, Sendable, Codable {
     case name = "名称"
     case type = "类型"
     case modified = "修改时间"
@@ -9,7 +9,7 @@ enum ManifestSort: String, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
 }
 
-struct ScanOptions: Sendable, Equatable {
+struct ScanOptions: Sendable, Equatable, Codable {
     var includeSubfolders = true
     var includeHidden = false
     var foldersFirst = true
@@ -22,7 +22,7 @@ struct DisplayOptions: Sendable, Equatable {
     var showFileCount = true
 }
 
-struct ManifestNode: Identifiable, Sendable, Equatable {
+struct ManifestNode: Identifiable, Sendable, Equatable, Codable {
     let id: String
     let name: String
     let isDirectory: Bool
@@ -44,7 +44,7 @@ struct ManifestNode: Identifiable, Sendable, Equatable {
     }
 }
 
-struct ManifestSnapshot: Sendable, Equatable {
+struct ManifestSnapshot: Sendable, Equatable, Codable {
     let root: ManifestNode
     let skippedCount: Int
 

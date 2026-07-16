@@ -23,6 +23,13 @@ final class FolderManifestTests: XCTestCase {
         for language in AppLanguage.allCases {
             let strings = AppStrings(language: language)
             XCTAssertFalse(strings.settings.isEmpty)
+            XCTAssertFalse(strings.showMainWindow.isEmpty)
+            XCTAssertFalse(strings.recentlyOpened.isEmpty)
+            XCTAssertFalse(strings.noRecentFolders.isEmpty)
+            XCTAssertFalse(strings.pinFolder.isEmpty)
+            XCTAssertFalse(strings.unpinFolder.isEmpty)
+            XCTAssertFalse(strings.movePinnedUp.isEmpty)
+            XCTAssertFalse(strings.movePinnedDown.isEmpty)
             XCTAssertFalse(strings.selectFolder.isEmpty)
             XCTAssertFalse(strings.searchPlaceholder.isEmpty)
             XCTAssertFalse(strings.search.isEmpty)
@@ -34,6 +41,106 @@ final class FolderManifestTests: XCTestCase {
             XCTAssertFalse(strings.matchPosition(1, total: 2).isEmpty)
             XCTAssertFalse(strings.exportPanelTitle.isEmpty)
         }
+    }
+
+    @MainActor
+    func testRecentFolderStorePersistsSnapshotsAndKeepsMostRecentFirst() throws {
+        let storageURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("RecentFolders.plist")
+        defer { try? FileManager.default.removeItem(at: storageURL.deletingLastPathComponent()) }
+
+        let firstURL = URL(fileURLWithPath: "/tmp/first", isDirectory: true)
+        let secondURL = URL(fileURLWithPath: "/tmp/second", isDirectory: true)
+        let firstSnapshot = testSnapshot(rootName: "first")
+        let secondSnapshot = testSnapshot(rootName: "second")
+        let store = RecentFolderStore(storageURL: storageURL)
+
+        store.record(url: firstURL, snapshot: firstSnapshot, options: ScanOptions())
+        store.record(url: secondURL, snapshot: secondSnapshot, options: ScanOptions())
+
+        XCTAssertEqual(store.entries.map(\.name), ["second", "first"])
+        XCTAssertEqual(store.entries[1].snapshot, firstSnapshot)
+
+        let reloadedStore = RecentFolderStore(storageURL: storageURL)
+        XCTAssertEqual(reloadedStore.entries.map(\.name), ["second", "first"])
+        XCTAssertEqual(reloadedStore.entries[0].snapshot, secondSnapshot)
+
+        reloadedStore.touch(reloadedStore.entries[1])
+        XCTAssertEqual(reloadedStore.entries.map(\.name), ["first", "second"])
+    }
+
+    @MainActor
+    func testPinnedRecentFoldersStayAboveNewAndCanBeReordered() {
+        let storageURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("RecentFolders.plist")
+        defer { try? FileManager.default.removeItem(at: storageURL.deletingLastPathComponent()) }
+        let store = RecentFolderStore(storageURL: storageURL)
+
+        for name in ["first", "second", "third"] {
+            store.record(
+                url: URL(fileURLWithPath: "/tmp/\(name)", isDirectory: true),
+                snapshot: testSnapshot(rootName: name),
+                options: ScanOptions()
+            )
+        }
+
+        let firstPath = store.entries.first { $0.name == "first" }!.path
+        let secondPath = store.entries.first { $0.name == "second" }!.path
+        store.togglePin(path: firstPath)
+        store.togglePin(path: secondPath)
+        store.record(
+            url: URL(fileURLWithPath: "/tmp/fourth", isDirectory: true),
+            snapshot: testSnapshot(rootName: "fourth"),
+            options: ScanOptions()
+        )
+
+        XCTAssertEqual(store.entries.map(\.name), ["first", "second", "fourth", "third"])
+        XCTAssertEqual(store.entries.map(\.isPinned), [true, true, false, false])
+        XCTAssertTrue(store.canMovePinned(path: secondPath, by: -1))
+
+        store.movePinned(path: secondPath, by: -1)
+        XCTAssertEqual(store.entries.map(\.name), ["second", "first", "fourth", "third"])
+
+        store.touch(store.entries.last!)
+        XCTAssertEqual(store.entries.map(\.name), ["second", "first", "third", "fourth"])
+    }
+
+    @MainActor
+    func testRecentFolderStoreKeepsTwentyUnpinnedFolders() {
+        let storageURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("RecentFolders.plist")
+        defer { try? FileManager.default.removeItem(at: storageURL.deletingLastPathComponent()) }
+        let store = RecentFolderStore(storageURL: storageURL)
+
+        for index in 1...25 {
+            let name = "folder-\(index)"
+            store.record(
+                url: URL(fileURLWithPath: "/tmp/\(name)", isDirectory: true),
+                snapshot: testSnapshot(rootName: name),
+                options: ScanOptions()
+            )
+        }
+
+        XCTAssertEqual(store.entries.count, 20)
+        XCTAssertEqual(store.entries.first?.name, "folder-25")
+        XCTAssertEqual(store.entries.last?.name, "folder-6")
+    }
+
+    private func testSnapshot(rootName: String) -> ManifestSnapshot {
+        ManifestSnapshot(
+            root: ManifestNode(
+                id: rootName,
+                name: rootName,
+                isDirectory: true,
+                size: 0,
+                modifiedDate: nil,
+                children: []
+            ),
+            skippedCount: 0
+        )
     }
 
     @MainActor

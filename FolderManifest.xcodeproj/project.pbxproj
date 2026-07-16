@@ -16,6 +16,7 @@
 		F10000000000000000000007 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000009 /* Localization.swift */; };
 		F10000000000000000000008 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000010 /* SettingsView.swift */; };
 		F10000000000000000000009 /* SelectableTreeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000011 /* SelectableTreeText.swift */; };
+		F10000000000000000000010 /* RecentFolderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000012 /* RecentFolderStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		F20000000000000000000009 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		F20000000000000000000010 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F20000000000000000000011 /* SelectableTreeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTreeText.swift; sourceTree = "<group>"; };
+		F20000000000000000000012 /* RecentFolderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentFolderStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				F20000000000000000000009 /* Localization.swift */,
 				F20000000000000000000010 /* SettingsView.swift */,
 				F20000000000000000000011 /* SelectableTreeText.swift */,
+				F20000000000000000000012 /* RecentFolderStore.swift */,
 			);
 			path = Sources/FolderManifest;
 			sourceTree = "<group>";
@@ -161,6 +164,7 @@
 				F10000000000000000000007 /* Localization.swift in Sources */,
 				F10000000000000000000008 /* SettingsView.swift in Sources */,
 				F10000000000000000000009 /* SelectableTreeText.swift in Sources */,
+				F10000000000000000000010 /* RecentFolderStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,7 +197,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = J4XU386877;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -228,7 +232,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = J4XU386877;
 				ENABLE_APP_SANDBOX = YES;

@@ -78,6 +78,7 @@ struct AppStrings: Sendable {
     }
 
     var settings: String { text("设置", "設定", "Settings", "設定", "설정", "Ajustes", "Réglages", "Einstellungen", "Ajustes") }
+    var showMainWindow: String { text("显示主窗口", "顯示主視窗", "Show Main Window", "メインウインドウを表示", "메인 윈도우 보기", "Mostrar ventana principal", "Afficher la fenêtre principale", "Hauptfenster anzeigen", "Mostrar janela principal") }
     var languageLabel: String { text("界面语言", "介面語言", "Interface Language", "表示言語", "인터페이스 언어", "Idioma de la interfaz", "Langue de l’interface", "Oberflächensprache", "Idioma da interface") }
     var languageHint: String { text("选择后立即应用，并在下次启动时保留。", "選擇後立即套用，並在下次啟動時保留。", "Changes apply immediately and are kept for the next launch.", "選択内容はすぐに適用され、次回起動時にも保持されます。", "선택 즉시 적용되며 다음 실행 시에도 유지됩니다.", "Los cambios se aplican de inmediato y se conservan para el próximo inicio.", "Les changements s’appliquent immédiatement et sont conservés au prochain lancement.", "Änderungen werden sofort übernommen und für den nächsten Start gespeichert.", "As alterações são aplicadas imediatamente e mantidas na próxima abertura.") }
 
@@ -97,6 +98,12 @@ struct AppStrings: Sendable {
     var includeHidden: String { text("包含隐藏文件", "包含隱藏檔案", "Include Hidden Files", "隠しファイルを含める", "숨김 파일 포함", "Incluir archivos ocultos", "Inclure les fichiers masqués", "Versteckte Dateien einbeziehen", "Incluir arquivos ocultos") }
     var foldersFirst: String { text("文件夹优先", "資料夾優先", "Folders First", "フォルダを先に表示", "폴더 우선", "Carpetas primero", "Dossiers en premier", "Ordner zuerst", "Pastas primeiro") }
     var sortBy: String { text("排序方式", "排序方式", "Sort By", "並べ替え", "정렬 기준", "Ordenar por", "Trier par", "Sortieren nach", "Ordenar por") }
+    var recentlyOpened: String { text("最近打开", "最近開啟", "Recently Opened", "最近開いた項目", "최근에 연 폴더", "Abiertos recientemente", "Ouverts récemment", "Zuletzt geöffnet", "Abertos recentemente") }
+    var noRecentFolders: String { text("暂无记录", "暫無記錄", "No recent folders", "履歴はありません", "최근 폴더 없음", "No hay carpetas recientes", "Aucun dossier récent", "Keine zuletzt geöffneten Ordner", "Nenhuma pasta recente") }
+    var pinFolder: String { text("固定文件夹", "固定資料夾", "Pin Folder", "フォルダを固定", "폴더 고정", "Fijar carpeta", "Épingler le dossier", "Ordner anheften", "Fixar pasta") }
+    var unpinFolder: String { text("取消固定", "取消固定", "Unpin Folder", "固定を解除", "폴더 고정 해제", "Desfijar carpeta", "Désépingler le dossier", "Ordner lösen", "Desafixar pasta") }
+    var movePinnedUp: String { text("上移固定文件夹", "上移固定資料夾", "Move Pinned Folder Up", "固定フォルダを上へ", "고정 폴더 위로 이동", "Subir carpeta fijada", "Monter le dossier épinglé", "Angehefteten Ordner nach oben", "Mover pasta fixada para cima") }
+    var movePinnedDown: String { text("下移固定文件夹", "下移固定資料夾", "Move Pinned Folder Down", "固定フォルダを下へ", "고정 폴더 아래로 이동", "Bajar carpeta fijada", "Descendre le dossier épinglé", "Angehefteten Ordner nach unten", "Mover pasta fixada para baixo") }
     var displayInformation: String { text("显示信息", "顯示資訊", "Display Information", "表示情報", "표시 정보", "Información mostrada", "Informations affichées", "Angezeigte Informationen", "Informações exibidas") }
     var fileSize: String { text("文件大小", "檔案大小", "File Size", "ファイルサイズ", "파일 크기", "Tamaño del archivo", "Taille du fichier", "Dateigröße", "Tamanho do arquivo") }
     var modifiedDate: String { text("修改时间", "修改時間", "Modified Date", "更新日時", "수정 시간", "Fecha de modificación", "Date de modification", "Änderungsdatum", "Data de modificação") }

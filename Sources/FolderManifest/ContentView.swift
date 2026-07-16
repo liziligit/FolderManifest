@@ -4,7 +4,9 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @EnvironmentObject private var languageSettings: LanguageSettings
+    @StateObject private var recentStore = RecentFolderStore()
     @State private var selectedURL: URL?
+    @State private var selectedRecentPath: String?
     @State private var snapshot: ManifestSnapshot?
     @State private var scanOptions = ScanOptions()
     @State private var displayOptions = DisplayOptions()
@@ -39,12 +41,16 @@ struct ContentView: View {
         searchState.regexErrorDescription.map(strings.invalidRegex)
     }
 
+    private var activeRecentPath: String? {
+        selectedRecentPath ?? selectedURL?.path(percentEncoded: false)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
 
-            if snapshot == nil && !isScanning {
+            if snapshot == nil && !isScanning && recentStore.entries.isEmpty {
                 emptyState
             } else {
                 workspace
@@ -158,9 +164,11 @@ struct ContentView: View {
     private var workspace: some View {
         HSplitView {
             settingsPanel
-                .frame(minWidth: 250, idealWidth: 280, maxWidth: 320)
+                .frame(minWidth: 130, idealWidth: 145, maxWidth: 150)
+            recentPanel
+                .frame(minWidth: 240, idealWidth: 270, maxWidth: 315)
             previewPanel
-                .frame(minWidth: 620)
+                .frame(minWidth: 520)
         }
     }
 
@@ -174,13 +182,25 @@ struct ContentView: View {
                 }
 
                 settingSection(strings.sortBy, icon: "arrow.up.arrow.down") {
-                    Picker(strings.sortBy, selection: orderingBinding(\.sort)) {
+                    Menu {
                         ForEach(ManifestSort.allCases) { option in
-                            Text(strings.sortName(option)).tag(option)
+                            Button(strings.sortName(option)) {
+                                scanOptions.sort = option
+                                reorderTree()
+                            }
                         }
+                    } label: {
+                        HStack {
+                            Text(strings.sortName(scanOptions.sort))
+                            Spacer()
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
+                    .menuStyle(.borderlessButton)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 settingSection(strings.displayInformation, icon: "line.3.horizontal.decrease.circle") {
@@ -189,18 +209,59 @@ struct ContentView: View {
                     Toggle(strings.filesInFolder, isOn: displayBinding(\.showFileCount))
                 }
 
-                Button {
-                    rescan()
-                } label: {
-                    Label(strings.rescan, systemImage: "arrow.clockwise")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .disabled(isScanning)
             }
-            .padding(20)
+            .padding(12)
         }
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.55))
+    }
+
+    private var recentPanel: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Label(strings.recentlyOpened, systemImage: "clock")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Button {
+                        recentStore.movePinned(path: activeRecentPath, by: -1)
+                    } label: {
+                        Image(systemName: "arrow.up")
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!recentStore.canMovePinned(path: activeRecentPath, by: -1))
+                    .help(strings.movePinnedUp)
+
+                    Button {
+                        recentStore.movePinned(path: activeRecentPath, by: 1)
+                    } label: {
+                        Image(systemName: "arrow.down")
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!recentStore.canMovePinned(path: activeRecentPath, by: 1))
+                    .help(strings.movePinnedDown)
+                }
+
+                if recentStore.entries.isEmpty {
+                    Text(strings.noRecentFolders)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 7)
+                } else {
+                    VStack(alignment: .leading, spacing: 3) {
+                        ForEach(recentStore.entries) { entry in
+                            recentFolderButton(entry)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(16)
+        }
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.32))
     }
 
     private var previewPanel: some View {
@@ -216,6 +277,11 @@ struct ContentView: View {
                 }
 
                 Spacer()
+
+                Button { rescan() } label: {
+                    Label(strings.rescan, systemImage: "arrow.clockwise")
+                }
+                .disabled(isScanning || selectedURL == nil)
 
                 Button { copyOutput() } label: {
                     Label(strings.copy, systemImage: "doc.on.doc")
@@ -457,6 +523,44 @@ struct ContentView: View {
             .background(.quaternary, in: Capsule())
     }
 
+    private func recentFolderButton(_ entry: RecentFolderEntry) -> some View {
+        HStack(spacing: 5) {
+            Button {
+                openRecent(entry)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "folder")
+                        .foregroundStyle(Color.accentColor)
+                    Text(entry.name)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(entry.path)
+
+            Button {
+                selectedRecentPath = entry.path
+                recentStore.togglePin(path: entry.path)
+            } label: {
+                Image(systemName: entry.isPinned ? "pin.fill" : "pin")
+                    .foregroundStyle(entry.isPinned ? Color.accentColor : Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .help(entry.isPinned ? strings.unpinFolder : strings.pinFolder)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 5)
+                .fill(entry.path == activeRecentPath
+                    ? Color.accentColor.opacity(0.16)
+                    : .clear)
+        )
+    }
+
     private func statistic(_ value: String, _ label: String, icon: String) -> some View {
         HStack(spacing: 7) {
             Image(systemName: icon)
@@ -502,6 +606,13 @@ struct ContentView: View {
         guard let snapshot else { return }
         let reorderedSnapshot = ManifestOrdering.sorted(snapshot: snapshot, options: scanOptions)
         self.snapshot = reorderedSnapshot
+        if let selectedURL {
+            recentStore.updateCurrent(
+                path: selectedURL.path(percentEncoded: false),
+                snapshot: reorderedSnapshot,
+                options: scanOptions
+            )
+        }
         searchState.refresh(snapshot: reorderedSnapshot, renderer: renderer)
     }
 
@@ -546,7 +657,21 @@ struct ContentView: View {
 
     private func rescan() {
         guard let selectedURL else { return }
-        startScan(selectedURL)
+        startScan(recentStore.resolvedURL(forPath: selectedURL.path(percentEncoded: false)))
+    }
+
+    private func openRecent(_ entry: RecentFolderEntry) {
+        currentScanID = UUID()
+        isScanning = false
+        isShowingScanCompletion = false
+        selectedURL = recentStore.resolvedURL(forPath: entry.path)
+        selectedRecentPath = entry.path
+        scanOptions = entry.scanOptions
+        snapshot = entry.snapshot
+        discoveredItemCount = entry.snapshot.fileCount + entry.snapshot.folderCount
+        errorMessage = nil
+        searchState.reset()
+        recentStore.touch(entry)
     }
 
     private func startScan(_ url: URL) {
@@ -559,9 +684,14 @@ struct ContentView: View {
         errorMessage = nil
         searchState.reset()
         selectedURL = url
+        selectedRecentPath = url.path(percentEncoded: false)
         let options = scanOptions
 
         Task {
+            let hasSecurityScope = url.startAccessingSecurityScopedResource()
+            defer {
+                if hasSecurityScope { url.stopAccessingSecurityScopedResource() }
+            }
             let (progressStream, progressContinuation) = AsyncStream.makeStream(
                 of: Int.self,
                 bufferingPolicy: .bufferingNewest(1)
@@ -583,6 +713,9 @@ struct ContentView: View {
                 await progressTask.value
                 guard currentScanID == scanID else { return }
                 snapshot = ManifestOrdering.sorted(snapshot: result, options: scanOptions)
+                if let snapshot {
+                    recentStore.record(url: url, snapshot: snapshot, options: scanOptions)
+                }
                 discoveredItemCount = result.fileCount + result.folderCount
                 isScanning = false
                 isShowingScanCompletion = true
