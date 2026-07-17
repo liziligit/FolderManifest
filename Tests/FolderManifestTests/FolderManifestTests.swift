@@ -244,6 +244,12 @@ final class FolderManifestTests: XCTestCase {
 
         XCTAssertEqual(rows.map(\.id), ["root", "root/file.txt"])
         XCTAssertEqual(rows.map(\.text).joined(separator: "\n"), tree)
+        XCTAssertEqual(rows[0].connectorSegments, [])
+        XCTAssertEqual(rows[1].connectorSegments, [.lastBranch])
+        XCTAssertEqual(
+            rows[1].visibleText,
+            String(rows[1].text.dropFirst(rows[1].prefix.count))
+        )
         XCTAssertTrue(tree.contains("└── file.txt"))
         XCTAssertTrue(tree.contains("1 个文件"))
     }

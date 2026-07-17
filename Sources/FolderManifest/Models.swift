@@ -159,12 +159,31 @@ struct ManifestTreeRow: Identifiable, Sendable, Equatable {
 
     var id: String { node.id }
     var text: String { prefix + node.name + metadata }
+    var visibleText: String { node.name + metadata }
+    var connectorSegments: [ManifestTreeConnectorSegment] {
+        Array(prefix).enumerated().compactMap { index, character in
+            guard index.isMultiple(of: 4) else { return nil }
+            switch character {
+            case "│": return .continuation
+            case "├": return .branch
+            case "└": return .lastBranch
+            default: return .spacer
+            }
+        }
+    }
 
     func fileURL(relativeTo rootURL: URL) -> URL {
         path.split(separator: "/").dropFirst().reduce(rootURL) { url, component in
             url.appendingPathComponent(String(component))
         }
     }
+}
+
+enum ManifestTreeConnectorSegment: Sendable, Equatable {
+    case spacer
+    case continuation
+    case branch
+    case lastBranch
 }
 
 struct ManifestSearchState: Sendable, Equatable {

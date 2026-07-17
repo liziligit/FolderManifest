@@ -386,7 +386,7 @@ struct ContentView: View {
                 GeometryReader { viewport in
                     ScrollViewReader { proxy in
                         ScrollView([.vertical, .horizontal]) {
-                            LazyVStack(alignment: .leading, spacing: 1) {
+                            LazyVStack(alignment: .leading, spacing: 0) {
                                 ForEach(treeRows) { row in
                                     treeRow(
                                         row,
@@ -436,27 +436,31 @@ struct ContentView: View {
         match: ManifestSearchMatch?,
         isSelected: Bool
     ) -> some View {
-        SelectableTreeText(
-            text: highlightedText(for: row, match: match),
-            searchTitle: strings.search,
-            copyTitle: strings.copy,
-            onSearch: performSelectedTextSearch,
-            onDoubleClick: { revealInFinder(row) }
-        )
+        HStack(spacing: 0) {
+            TreeConnectorView(segments: row.connectorSegments)
+
+            SelectableTreeText(
+                text: highlightedText(for: row, match: match),
+                searchTitle: strings.search,
+                copyTitle: strings.copy,
+                onSearch: performSelectedTextSearch,
+                onDoubleClick: { revealInFinder(row) }
+            )
             .fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 3)
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(rowHighlightColor(isMatched: match != nil, isSelected: isSelected))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 5)
-                    .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
-            )
-            .contentShape(Rectangle())
-            .help(strings.revealHelp)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
+        }
+        .frame(height: TreeConnectorView.rowHeight, alignment: .leading)
+        .padding(.horizontal, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 5)
+                .fill(rowHighlightColor(isMatched: match != nil, isSelected: isSelected))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 5)
+                .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
+        )
+        .contentShape(Rectangle())
+        .help(strings.revealHelp)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var searchPatternBinding: Binding<String> {
@@ -485,7 +489,7 @@ struct ContentView: View {
         for row: ManifestTreeRow,
         match: ManifestSearchMatch?
     ) -> NSAttributedString {
-        let text = NSMutableAttributedString(string: row.text)
+        let text = NSMutableAttributedString(string: row.visibleText)
         text.addAttributes([
             .font: NSFont.monospacedSystemFont(ofSize: 13.5, weight: .regular),
             .foregroundColor: NSColor.labelColor,
@@ -495,7 +499,7 @@ struct ContentView: View {
         let pathLength = (match.path as NSString).length
         let nameLength = (row.node.name as NSString).length
         let nameStartInPath = pathLength - nameLength
-        let nameStartInRow = (row.prefix as NSString).length
+        let nameStartInRow = 0
         let nameRangeInPath = NSRange(location: nameStartInPath, length: nameLength)
 
         for matchRange in match.matchRanges {
@@ -861,6 +865,54 @@ struct ContentView: View {
         case .unreadable(let name):
             strings.unreadableError(name)
         }
+    }
+}
+
+private struct TreeConnectorView: View {
+    static let font = NSFont.monospacedSystemFont(ofSize: 13.5, weight: .regular)
+    static let characterWidth = ceil(
+        NSAttributedString(string: "0", attributes: [.font: font]).size().width
+    )
+    static let indentWidth = characterWidth * 4
+    static let rowHeight = ceil(font.boundingRectForFont.height) + 6
+
+    let segments: [ManifestTreeConnectorSegment]
+
+    var body: some View {
+        Canvas { context, size in
+            let middleY = size.height / 2
+            for (index, segment) in segments.enumerated() {
+                let startX = CGFloat(index) * Self.indentWidth
+                let lineX = startX + Self.characterWidth / 2
+                let endX = startX + Self.indentWidth - Self.characterWidth / 2
+                var path = Path()
+
+                switch segment {
+                case .spacer:
+                    continue
+                case .continuation:
+                    path.move(to: CGPoint(x: lineX, y: 0))
+                    path.addLine(to: CGPoint(x: lineX, y: size.height))
+                case .branch:
+                    path.move(to: CGPoint(x: lineX, y: 0))
+                    path.addLine(to: CGPoint(x: lineX, y: size.height))
+                    path.move(to: CGPoint(x: lineX, y: middleY))
+                    path.addLine(to: CGPoint(x: endX, y: middleY))
+                case .lastBranch:
+                    path.move(to: CGPoint(x: lineX, y: 0))
+                    path.addLine(to: CGPoint(x: lineX, y: middleY))
+                    path.addLine(to: CGPoint(x: endX, y: middleY))
+                }
+
+                context.stroke(
+                    path,
+                    with: .color(Color(nsColor: .secondaryLabelColor)),
+                    style: StrokeStyle(lineWidth: 1, lineCap: .square, lineJoin: .miter)
+                )
+            }
+        }
+        .frame(width: CGFloat(segments.count) * Self.indentWidth)
+        .accessibilityHidden(true)
     }
 }
 
