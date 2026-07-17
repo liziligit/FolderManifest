@@ -2,6 +2,27 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+struct ClearUnpinnedHistoryAction {
+    let perform: () -> Void
+}
+
+private struct ClearUnpinnedHistoryActionKey: FocusedValueKey {
+    typealias Value = ClearUnpinnedHistoryAction
+}
+
+extension FocusedValues {
+    var clearUnpinnedHistoryAction: ClearUnpinnedHistoryAction? {
+        get { self[ClearUnpinnedHistoryActionKey.self] }
+        set { self[ClearUnpinnedHistoryActionKey.self] = newValue }
+    }
+}
+
+private enum HistoryConfirmation {
+    case remove(RecentFolderEntry)
+    case removeUnavailable(Set<String>)
+    case clearUnpinned
+}
+
 struct ContentView: View {
     @EnvironmentObject private var languageSettings: LanguageSettings
     @StateObject private var recentStore = RecentFolderStore()
@@ -18,6 +39,8 @@ struct ContentView: View {
     @State private var isDropTargeted = false
     @State private var errorMessage: String?
     @State private var successMessage: String?
+    @State private var showPinnedOnly = false
+    @State private var historyConfirmation: HistoryConfirmation?
 
     private let scanner = FolderScanner()
     private var strings: AppStrings { AppStrings(language: languageSettings.language) }
@@ -52,6 +75,22 @@ struct ContentView: View {
         selectedRecentPath ?? selectedURL?.path(percentEncoded: false)
     }
 
+    private var selectedRecentEntry: RecentFolderEntry? {
+        guard let activeRecentPath else { return nil }
+        return recentStore.entries.first { $0.path == activeRecentPath }
+    }
+
+    private var visibleRecentEntries: [RecentFolderEntry] {
+        showPinnedOnly ? recentStore.entries.filter(\.isPinned) : recentStore.entries
+    }
+
+    private var clearUnpinnedHistoryAction: ClearUnpinnedHistoryAction? {
+        guard recentStore.hasUnpinnedEntries else { return nil }
+        return ClearUnpinnedHistoryAction {
+            historyConfirmation = .clearUnpinned
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -72,6 +111,21 @@ struct ContentView: View {
         } message: {
             Text(errorMessage ?? strings.unknownError)
         }
+        .alert(
+            historyConfirmationTitle,
+            isPresented: Binding(
+                get: { historyConfirmation != nil },
+                set: { if !$0 { historyConfirmation = nil } }
+            ),
+            presenting: historyConfirmation
+        ) { confirmation in
+            Button(strings.cancel, role: .cancel) { historyConfirmation = nil }
+            Button(historyConfirmationActionTitle(confirmation), role: .destructive) {
+                performHistoryConfirmation(confirmation)
+            }
+        } message: { confirmation in
+            Text(historyConfirmationMessage(confirmation))
+        }
         .overlay(alignment: .bottom) {
             if let successMessage {
                 statusToast(successMessage)
@@ -80,6 +134,7 @@ struct ContentView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: successMessage)
+        .focusedSceneValue(\.clearUnpinnedHistoryAction, clearUnpinnedHistoryAction)
     }
 
     private var header: some View {
@@ -259,6 +314,57 @@ struct ContentView: View {
                 .buttonStyle(.plain)
                 .disabled(!recentStore.canMovePinned(path: activeRecentPath, by: 1))
                 .help(strings.movePinnedDown)
+
+                Menu {
+                    Button(strings.openInFinder) {
+                        openSelectedRecentInFinder()
+                    }
+                    .disabled(selectedRecentEntry == nil)
+
+                    Button(strings.copyFolderPath) {
+                        copySelectedFolderPath()
+                    }
+                    .disabled(selectedRecentEntry == nil)
+
+                    Button(strings.rescan) {
+                        rescanSelectedRecent()
+                    }
+                    .disabled(selectedRecentEntry == nil || isScanning)
+
+                    Button(selectedRecentEntry?.isPinned == true
+                        ? strings.unpinFolder
+                        : strings.pinFolder) {
+                        toggleSelectedRecentPin()
+                    }
+                    .disabled(selectedRecentEntry.map {
+                        !recentStore.canTogglePin(path: $0.path)
+                    } ?? true)
+
+                    Button(strings.removeFromRecent) {
+                        requestRemoveSelectedRecent()
+                    }
+                    .disabled(selectedRecentEntry == nil)
+
+                    Divider()
+
+                    Toggle(strings.showPinnedOnly, isOn: $showPinnedOnly)
+
+                    Button(strings.removeUnavailableHistory) {
+                        requestRemoveUnavailableHistory()
+                    }
+                    .disabled(recentStore.entries.isEmpty)
+
+                    Button(strings.clearUnpinnedHistory) {
+                        historyConfirmation = .clearUnpinned
+                    }
+                    .disabled(!recentStore.hasUnpinnedEntries)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .frame(width: 18, height: 18)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help(strings.recentActions)
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -266,15 +372,15 @@ struct ContentView: View {
 
             ScrollView {
                 Group {
-                    if recentStore.entries.isEmpty {
-                        Text(strings.noRecentFolders)
+                    if visibleRecentEntries.isEmpty {
+                        Text(showPinnedOnly ? strings.noPinnedFolders : strings.noRecentFolders)
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 7)
                     } else {
                         VStack(alignment: .leading, spacing: 3) {
-                            ForEach(recentStore.entries) { entry in
+                            ForEach(visibleRecentEntries) { entry in
                                 recentFolderButton(entry)
                             }
                         }
@@ -714,6 +820,113 @@ struct ContentView: View {
     private func rescan() {
         guard let selectedURL else { return }
         startScan(recentStore.resolvedURL(forPath: selectedURL.path(percentEncoded: false)))
+    }
+
+    private func openSelectedRecentInFinder() {
+        guard let entry = selectedRecentEntry else { return }
+        let url = recentStore.resolvedURL(forPath: entry.path)
+        let hasSecurityScope = url.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityScope { url.stopAccessingSecurityScopedResource() }
+        }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            errorMessage = strings.itemMissing
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func copySelectedFolderPath() {
+        guard let entry = selectedRecentEntry else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(entry.path, forType: .string)
+        showSuccess(strings.folderPathCopied)
+    }
+
+    private func rescanSelectedRecent() {
+        guard let entry = selectedRecentEntry else { return }
+        startScan(recentStore.resolvedURL(forPath: entry.path))
+    }
+
+    private func toggleSelectedRecentPin() {
+        guard let entry = selectedRecentEntry else { return }
+        recentStore.togglePin(path: entry.path)
+    }
+
+    private func requestRemoveSelectedRecent() {
+        guard let entry = selectedRecentEntry else { return }
+        historyConfirmation = .remove(entry)
+    }
+
+    private func requestRemoveUnavailableHistory() {
+        let paths = Set(recentStore.entries.compactMap { entry -> String? in
+            let url = recentStore.resolvedURL(forPath: entry.path)
+            let hasSecurityScope = url.startAccessingSecurityScopedResource()
+            defer {
+                if hasSecurityScope { url.stopAccessingSecurityScopedResource() }
+            }
+            return FileManager.default.fileExists(atPath: url.path) ? nil : entry.path
+        })
+        guard !paths.isEmpty else {
+            showSuccess(strings.noUnavailableHistory)
+            return
+        }
+        historyConfirmation = .removeUnavailable(paths)
+    }
+
+    private var historyConfirmationTitle: String {
+        guard let historyConfirmation else { return "" }
+        return switch historyConfirmation {
+        case .remove:
+            strings.removeHistoryTitle
+        case .removeUnavailable:
+            strings.removeUnavailableTitle
+        case .clearUnpinned:
+            strings.clearHistoryTitle
+        }
+    }
+
+    private func historyConfirmationMessage(_ confirmation: HistoryConfirmation) -> String {
+        switch confirmation {
+        case .remove(let entry):
+            strings.removeHistoryMessage(entry.name)
+        case .removeUnavailable(let paths):
+            strings.removeUnavailableMessage(paths.count)
+        case .clearUnpinned:
+            strings.clearHistoryMessage
+        }
+    }
+
+    private func historyConfirmationActionTitle(_ confirmation: HistoryConfirmation) -> String {
+        switch confirmation {
+        case .clearUnpinned:
+            strings.clear
+        case .remove, .removeUnavailable:
+            strings.remove
+        }
+    }
+
+    private func performHistoryConfirmation(_ confirmation: HistoryConfirmation) {
+        historyConfirmation = nil
+        switch confirmation {
+        case .remove(let entry):
+            recentStore.remove(path: entry.path)
+            if selectedRecentPath == entry.path { selectedRecentPath = nil }
+            showSuccess(strings.removedFromHistory)
+        case .removeUnavailable(let paths):
+            recentStore.remove(paths: paths)
+            if let selectedRecentPath, paths.contains(selectedRecentPath) {
+                self.selectedRecentPath = nil
+            }
+            showSuccess(strings.removedFromHistory)
+        case .clearUnpinned:
+            let unpinnedPaths = Set(recentStore.entries.filter { !$0.isPinned }.map(\.path))
+            recentStore.clearUnpinnedEntries()
+            if let selectedRecentPath, unpinnedPaths.contains(selectedRecentPath) {
+                self.selectedRecentPath = nil
+            }
+            showSuccess(strings.historyCleared)
+        }
     }
 
     private func openRecent(_ entry: RecentFolderEntry) {

@@ -50,6 +50,7 @@ final class RecentFolderStore: ObservableObject {
     private static let maximumUnpinnedCount = 25
 
     var pinnedFolderCount: Int { pinnedCount }
+    var hasUnpinnedEntries: Bool { entries.contains { !$0.isPinned } }
 
     init(storageURL: URL? = nil) {
         self.storageURL = storageURL ?? Self.defaultStorageURL
@@ -119,6 +120,23 @@ final class RecentFolderStore: ObservableObject {
               let index = entries.firstIndex(where: { $0.path == path })
         else { return }
         entries.swapAt(index, index + offset)
+        save()
+    }
+
+    func remove(path: String) {
+        entries.removeAll { $0.path == path }
+        save()
+    }
+
+    func remove(paths: Set<String>) {
+        guard !paths.isEmpty else { return }
+        entries.removeAll { paths.contains($0.path) }
+        save()
+    }
+
+    func clearUnpinnedEntries() {
+        guard hasUnpinnedEntries else { return }
+        entries.removeAll { !$0.isPinned }
         save()
     }
 

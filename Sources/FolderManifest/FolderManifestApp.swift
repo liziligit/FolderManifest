@@ -16,17 +16,36 @@ struct FolderManifestApp: App {
         .defaultSize(width: 1180, height: 760)
         .windowStyle(.titleBar)
         .commands {
-            CommandGroup(after: .windowList) {
-                Button(AppStrings(language: languageSettings.language).showMainWindow) {
-                    MainWindowController.shared.show()
-                }
-                .keyboardShortcut("0", modifiers: .command)
-            }
+            FolderManifestCommands(language: languageSettings.language)
         }
 
         Settings {
             SettingsView()
                 .environmentObject(languageSettings)
+        }
+    }
+}
+
+private struct FolderManifestCommands: Commands {
+    let language: AppLanguage
+    @FocusedValue(\.clearUnpinnedHistoryAction) private var clearUnpinnedHistoryAction
+
+    private var strings: AppStrings { AppStrings(language: language) }
+
+    var body: some Commands {
+        CommandGroup(after: .saveItem) {
+            Divider()
+            Button(strings.clearUnpinnedHistory) {
+                clearUnpinnedHistoryAction?.perform()
+            }
+            .disabled(clearUnpinnedHistoryAction == nil)
+        }
+
+        CommandGroup(after: .windowList) {
+            Button(strings.showMainWindow) {
+                MainWindowController.shared.show()
+            }
+            .keyboardShortcut("0", modifiers: .command)
         }
     }
 }

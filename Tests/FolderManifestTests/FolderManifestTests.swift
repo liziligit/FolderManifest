@@ -26,12 +26,23 @@ final class FolderManifestTests: XCTestCase {
             XCTAssertFalse(strings.showMainWindow.isEmpty)
             XCTAssertFalse(strings.recentlyOpened.isEmpty)
             XCTAssertFalse(strings.noRecentFolders.isEmpty)
+            XCTAssertFalse(strings.noPinnedFolders.isEmpty)
             XCTAssertFalse(strings.pinnedCountPrefix.isEmpty)
             XCTAssertFalse(strings.pinFolder.isEmpty)
             XCTAssertFalse(strings.unpinFolder.isEmpty)
             XCTAssertFalse(strings.pinnedLimitReached.isEmpty)
             XCTAssertFalse(strings.movePinnedUp.isEmpty)
             XCTAssertFalse(strings.movePinnedDown.isEmpty)
+            XCTAssertFalse(strings.recentActions.isEmpty)
+            XCTAssertFalse(strings.openInFinder.isEmpty)
+            XCTAssertFalse(strings.copyFolderPath.isEmpty)
+            XCTAssertFalse(strings.removeFromRecent.isEmpty)
+            XCTAssertFalse(strings.showPinnedOnly.isEmpty)
+            XCTAssertFalse(strings.removeUnavailableHistory.isEmpty)
+            XCTAssertFalse(strings.clearUnpinnedHistory.isEmpty)
+            XCTAssertFalse(strings.clearHistoryMessage.isEmpty)
+            XCTAssertFalse(strings.removeHistoryMessage("Folder").isEmpty)
+            XCTAssertFalse(strings.removeUnavailableMessage(2).isEmpty)
             XCTAssertFalse(strings.selectFolder.isEmpty)
             XCTAssertFalse(strings.searchPlaceholder.isEmpty)
             XCTAssertFalse(strings.search.isEmpty)
@@ -169,6 +180,43 @@ final class FolderManifestTests: XCTestCase {
         store.togglePin(path: candidatePath)
         XCTAssertEqual(store.pinnedFolderCount, 25)
         XCTAssertTrue(store.entries.first { $0.path == candidatePath }!.isPinned)
+    }
+
+    @MainActor
+    func testRecentHistoryRemovalAndClearKeepPinnedFolders() {
+        let storageURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("RecentFolders.plist")
+        defer { try? FileManager.default.removeItem(at: storageURL.deletingLastPathComponent()) }
+        let store = RecentFolderStore(storageURL: storageURL)
+
+        for name in ["pinned", "recent-one", "recent-two", "recent-three"] {
+            store.record(
+                url: URL(fileURLWithPath: "/tmp/\(name)", isDirectory: true),
+                snapshot: testSnapshot(rootName: name),
+                options: ScanOptions()
+            )
+        }
+
+        let pinnedPath = store.entries.first { $0.name == "pinned" }!.path
+        let firstRecentPath = store.entries.first { $0.name == "recent-one" }!.path
+        let secondRecentPath = store.entries.first { $0.name == "recent-two" }!.path
+        store.togglePin(path: pinnedPath)
+        store.remove(path: firstRecentPath)
+
+        XCTAssertEqual(store.entries.map(\.name), ["pinned", "recent-three", "recent-two"])
+        store.remove(paths: [secondRecentPath])
+        XCTAssertEqual(store.entries.map(\.name), ["pinned", "recent-three"])
+        XCTAssertTrue(store.hasUnpinnedEntries)
+
+        store.clearUnpinnedEntries()
+
+        XCTAssertEqual(store.entries.map(\.name), ["pinned"])
+        XCTAssertTrue(store.entries[0].isPinned)
+        XCTAssertFalse(store.hasUnpinnedEntries)
+
+        let reloadedStore = RecentFolderStore(storageURL: storageURL)
+        XCTAssertEqual(reloadedStore.entries.map(\.name), ["pinned"])
     }
 
     private func testSnapshot(rootName: String) -> ManifestSnapshot {
