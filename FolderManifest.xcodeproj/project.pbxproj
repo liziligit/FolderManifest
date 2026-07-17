@@ -17,6 +17,7 @@
 		F10000000000000000000008 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000010 /* SettingsView.swift */; };
 		F10000000000000000000009 /* SelectableTreeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000011 /* SelectableTreeText.swift */; };
 		F10000000000000000000010 /* RecentFolderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000012 /* RecentFolderStore.swift */; };
+		F10000000000000000000011 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000013 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		F20000000000000000000010 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F20000000000000000000011 /* SelectableTreeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTreeText.swift; sourceTree = "<group>"; };
 		F20000000000000000000012 /* RecentFolderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentFolderStore.swift; sourceTree = "<group>"; };
+		F20000000000000000000013 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				F20000000000000000000006 /* Info.plist */,
+				F20000000000000000000013 /* PrivacyInfo.xcprivacy */,
 				F20000000000000000000008 /* Assets.xcassets */,
 			);
 			path = AppResources;
@@ -146,6 +149,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F10000000000000000000006 /* Assets.xcassets in Resources */,
+				F10000000000000000000011 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
