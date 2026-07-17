@@ -29,16 +29,34 @@ struct FolderManifestApp: App {
 private struct FolderManifestCommands: Commands {
     let language: AppLanguage
     @FocusedValue(\.clearUnpinnedHistoryAction) private var clearUnpinnedHistoryAction
+    @FocusedValue(\.openFolderAction) private var openFolderAction
 
     private var strings: AppStrings { AppStrings(language: language) }
 
     var body: some Commands {
-        CommandGroup(after: .saveItem) {
+        CommandGroup(replacing: .newItem) {
+            Button(strings.openFolderMenu) {
+                openFolderAction?.perform()
+            }
+            .keyboardShortcut("o", modifiers: .command)
+            .disabled(openFolderAction == nil)
+        }
+
+        CommandGroup(replacing: .saveItem) {
             Divider()
             Button(strings.clearUnpinnedHistory) {
                 clearUnpinnedHistoryAction?.perform()
             }
             .disabled(clearUnpinnedHistoryAction == nil)
+        }
+
+        CommandGroup(after: .printItem) {
+            Divider()
+            Button(strings.closeWindow) {
+                NSApplication.shared.keyWindow?.performClose(nil)
+            }
+            .keyboardShortcut("w", modifiers: .command)
+            .disabled(NSApplication.shared.keyWindow == nil)
         }
 
         CommandGroup(after: .windowList) {

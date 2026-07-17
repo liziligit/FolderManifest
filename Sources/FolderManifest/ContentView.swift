@@ -6,14 +6,27 @@ struct ClearUnpinnedHistoryAction {
     let perform: () -> Void
 }
 
+struct OpenFolderAction {
+    let perform: () -> Void
+}
+
 private struct ClearUnpinnedHistoryActionKey: FocusedValueKey {
     typealias Value = ClearUnpinnedHistoryAction
+}
+
+private struct OpenFolderActionKey: FocusedValueKey {
+    typealias Value = OpenFolderAction
 }
 
 extension FocusedValues {
     var clearUnpinnedHistoryAction: ClearUnpinnedHistoryAction? {
         get { self[ClearUnpinnedHistoryActionKey.self] }
         set { self[ClearUnpinnedHistoryActionKey.self] = newValue }
+    }
+
+    var openFolderAction: OpenFolderAction? {
+        get { self[OpenFolderActionKey.self] }
+        set { self[OpenFolderActionKey.self] = newValue }
     }
 }
 
@@ -41,6 +54,7 @@ struct ContentView: View {
     @State private var successMessage: String?
     @State private var showPinnedOnly = false
     @State private var historyConfirmation: HistoryConfirmation?
+    @State private var keepsWorkspaceAfterRemoval = false
 
     private let scanner = FolderScanner()
     private var strings: AppStrings { AppStrings(language: languageSettings.language) }
@@ -96,7 +110,7 @@ struct ContentView: View {
             header
             Divider()
 
-            if snapshot == nil && !isScanning && recentStore.entries.isEmpty {
+            if snapshot == nil && !isScanning && recentStore.entries.isEmpty && !keepsWorkspaceAfterRemoval {
                 emptyState
             } else {
                 workspace
@@ -135,6 +149,7 @@ struct ContentView: View {
         }
         .animation(.easeOut(duration: 0.2), value: successMessage)
         .focusedSceneValue(\.clearUnpinnedHistoryAction, clearUnpinnedHistoryAction)
+        .focusedSceneValue(\.openFolderAction, OpenFolderAction(perform: chooseFolder))
     }
 
     private var header: some View {
@@ -496,6 +511,19 @@ struct ContentView: View {
             if isScanning || isShowingScanCompletion {
                 scanStatusView
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if snapshot == nil {
+                VStack(spacing: 12) {
+                    Image(systemName: "folder.badge.questionmark")
+                        .font(.system(size: 34, weight: .light))
+                        .foregroundStyle(Color.accentColor)
+                    Text(strings.previewWaitingPrompt)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(nsColor: .textBackgroundColor))
+                .onDrop(of: [.fileURL], isTargeted: $isDropTargeted, perform: handleDrop)
             } else {
                 GeometryReader { viewport in
                     ScrollViewReader { proxy in
@@ -911,10 +939,15 @@ struct ContentView: View {
         switch confirmation {
         case .remove(let entry):
             recentStore.remove(path: entry.path)
+            clearPreviewIfDisplaying(path: entry.path)
             if selectedRecentPath == entry.path { selectedRecentPath = nil }
             showSuccess(strings.removedFromHistory)
         case .removeUnavailable(let paths):
             recentStore.remove(paths: paths)
+            if let selectedURL,
+               paths.contains(selectedURL.path(percentEncoded: false)) {
+                clearCurrentPreviewAfterRemoval()
+            }
             if let selectedRecentPath, paths.contains(selectedRecentPath) {
                 self.selectedRecentPath = nil
             }
@@ -929,6 +962,24 @@ struct ContentView: View {
         }
     }
 
+    private func clearPreviewIfDisplaying(path: String) {
+        guard selectedURL?.path(percentEncoded: false) == path else { return }
+        clearCurrentPreviewAfterRemoval()
+    }
+
+    private func clearCurrentPreviewAfterRemoval() {
+        currentScanID = UUID()
+        isScanning = false
+        isShowingScanCompletion = false
+        selectedURL = nil
+        selectedRecentPath = nil
+        snapshot = nil
+        discoveredItemCount = 0
+        errorMessage = nil
+        searchState.reset()
+        keepsWorkspaceAfterRemoval = true
+    }
+
     private func openRecent(_ entry: RecentFolderEntry) {
         currentScanID = UUID()
         isScanning = false
@@ -940,6 +991,7 @@ struct ContentView: View {
         discoveredItemCount = entry.snapshot.fileCount + entry.snapshot.folderCount
         errorMessage = nil
         searchState.reset()
+        keepsWorkspaceAfterRemoval = false
         recentStore.touch(entry)
     }
 
@@ -954,6 +1006,7 @@ struct ContentView: View {
         searchState.reset()
         selectedURL = url
         selectedRecentPath = url.path(percentEncoded: false)
+        keepsWorkspaceAfterRemoval = false
         let scanOptionsForDisk: ScanOptions = {
             var options = scanOptions
             options.includeSubfolders = true

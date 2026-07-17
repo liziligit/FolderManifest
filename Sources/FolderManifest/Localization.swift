@@ -79,6 +79,8 @@ struct AppStrings: Sendable {
 
     var settings: String { text("设置", "設定", "Settings", "設定", "설정", "Ajustes", "Réglages", "Einstellungen", "Ajustes") }
     var showMainWindow: String { text("显示主窗口", "顯示主視窗", "Show Main Window", "メインウインドウを表示", "메인 윈도우 보기", "Mostrar ventana principal", "Afficher la fenêtre principale", "Hauptfenster anzeigen", "Mostrar janela principal") }
+    var openFolderMenu: String { text("打开文件夹…", "開啟資料夾…", "Open Folder…", "フォルダを開く…", "폴더 열기…", "Abrir carpeta…", "Ouvrir un dossier…", "Ordner öffnen…", "Abrir pasta…") }
+    var closeWindow: String { text("关闭", "關閉", "Close", "閉じる", "닫기", "Cerrar", "Fermer", "Schließen", "Fechar") }
     var languageLabel: String { text("界面语言", "介面語言", "Interface Language", "表示言語", "인터페이스 언어", "Idioma de la interfaz", "Langue de l’interface", "Oberflächensprache", "Idioma da interface") }
     var languageHint: String { text("选择后立即应用，并在下次启动时保留。", "選擇後立即套用，並在下次啟動時保留。", "Changes apply immediately and are kept for the next launch.", "選択内容はすぐに適用され、次回起動時にも保持されます。", "선택 즉시 적용되며 다음 실행 시에도 유지됩니다.", "Los cambios se aplican de inmediato y se conservan para el próximo inicio.", "Les changements s’appliquent immédiatement et sont conservés au prochain lancement.", "Änderungen werden sofort übernommen und für den nächsten Start gespeichert.", "As alterações são aplicadas imediatamente e mantidas na próxima abertura.") }
 
@@ -101,6 +103,7 @@ struct AppStrings: Sendable {
     var recentlyOpened: String { text("最近打开", "最近開啟", "Recently Opened", "最近開いた項目", "최근에 연 폴더", "Abiertos recientemente", "Ouverts récemment", "Zuletzt geöffnet", "Abertos recentemente") }
     var noRecentFolders: String { text("暂无记录", "暫無記錄", "No recent folders", "履歴はありません", "최근 폴더 없음", "No hay carpetas recientes", "Aucun dossier récent", "Keine zuletzt geöffneten Ordner", "Nenhuma pasta recente") }
     var noPinnedFolders: String { text("暂无固定文件夹", "暫無固定資料夾", "No pinned folders", "固定フォルダはありません", "고정된 폴더 없음", "No hay carpetas fijadas", "Aucun dossier épinglé", "Keine angehefteten Ordner", "Nenhuma pasta fixada") }
+    var previewWaitingPrompt: String { text("请打开、拖入或点击需要查看的目标文件夹", "請開啟、拖入或點擊需要查看的目標資料夾", "Open, drag in, or click the folder you want to view", "表示するフォルダを開く、ドラッグする、またはクリックしてください", "보려는 폴더를 열거나 드래그하거나 클릭하세요", "Abre, arrastra o haz clic en la carpeta que quieras ver", "Ouvrez, déposez ou cliquez sur le dossier à afficher", "Öffnen, ziehen oder klicken Sie auf den gewünschten Ordner", "Abra, arraste ou clique na pasta que deseja visualizar") }
     var pinnedCountPrefix: String { text("已固定", "已固定", "Pinned ", "固定 ", "고정 ", "Fijadas ", "Épinglés ", "Angeheftet ", "Fixadas ") }
     var pinnedCountSuffix: String { text("个", "個", "", "件", "개", "", "", "", "") }
     var pinFolder: String { text("固定文件夹", "固定資料夾", "Pin Folder", "フォルダを固定", "폴더 고정", "Fijar carpeta", "Épingler le dossier", "Ordner anheften", "Fixar pasta") }
