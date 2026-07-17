@@ -265,23 +265,26 @@ struct ContentView: View {
             .padding(.bottom, 12)
 
             ScrollView {
-                if recentStore.entries.isEmpty {
-                    Text(strings.noRecentFolders)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 7)
-                } else {
-                    VStack(alignment: .leading, spacing: 3) {
-                        ForEach(recentStore.entries) { entry in
-                            recentFolderButton(entry)
+                Group {
+                    if recentStore.entries.isEmpty {
+                        Text(strings.noRecentFolders)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 7)
+                    } else {
+                        VStack(alignment: .leading, spacing: 3) {
+                            ForEach(recentStore.entries) { entry in
+                                recentFolderButton(entry)
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.leading, 16)
+                .padding(.trailing, 32)
+                .padding(.bottom, 16)
             }
-            .contentMargins(.horizontal, 16, for: .scrollContent)
-            .contentMargins(.bottom, 16, for: .scrollContent)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.32))
@@ -803,7 +806,15 @@ struct ContentView: View {
 
     private func revealInFinder(_ row: ManifestTreeRow) {
         guard let selectedURL else { return }
-        let targetURL = row.fileURL(relativeTo: selectedURL)
+        let rootURL = recentStore.resolvedURL(
+            forPath: selectedURL.path(percentEncoded: false)
+        )
+        let hasSecurityScope = rootURL.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityScope { rootURL.stopAccessingSecurityScopedResource() }
+        }
+
+        let targetURL = row.fileURL(relativeTo: rootURL)
         guard FileManager.default.fileExists(atPath: targetURL.path) else {
             errorMessage = strings.itemMissing
             return
