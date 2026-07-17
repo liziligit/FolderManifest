@@ -30,6 +30,7 @@ struct ManifestNode: Identifiable, Sendable, Equatable, Codable {
     let modifiedDate: Date?
     let children: [ManifestNode]
     var preservedFileCount: Int? = nil
+    var preservedTotalSize: Int64? = nil
 
     var totalFileCount: Int {
         isDirectory
@@ -43,7 +44,9 @@ struct ManifestNode: Identifiable, Sendable, Equatable, Codable {
     }
 
     var totalSize: Int64 {
-        isDirectory ? children.reduce(0) { $0 + $1.totalSize } : size
+        isDirectory
+            ? preservedTotalSize ?? children.reduce(0) { $0 + $1.totalSize }
+            : size
     }
 }
 
@@ -74,7 +77,8 @@ enum ManifestVisibility {
             children: node.children
                 .filter(\.isDirectory)
                 .map(foldersOnly),
-            preservedFileCount: node.totalFileCount
+            preservedFileCount: node.totalFileCount,
+            preservedTotalSize: node.totalSize
         )
     }
 }
@@ -126,7 +130,8 @@ enum ManifestOrdering {
             size: node.size,
             modifiedDate: node.modifiedDate,
             children: children,
-            preservedFileCount: node.preservedFileCount
+            preservedFileCount: node.preservedFileCount,
+            preservedTotalSize: node.preservedTotalSize
         )
     }
 }

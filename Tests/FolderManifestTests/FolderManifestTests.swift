@@ -284,6 +284,7 @@ final class FolderManifestTests: XCTestCase {
         XCTAssertEqual(foldersOnly.root.children.map(\.name), ["folder"])
         XCTAssertTrue(foldersOnly.root.children[0].children.isEmpty)
         XCTAssertEqual(foldersOnly.fileCount, 2)
+        XCTAssertEqual(foldersOnly.totalSize, 2)
         XCTAssertEqual(foldersOnly.root.children[0].totalFileCount, 1)
         XCTAssertTrue(
             ManifestRenderer().render(snapshot: foldersOnly, display: DisplayOptions())
