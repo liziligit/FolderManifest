@@ -223,45 +223,48 @@ struct ContentView: View {
     }
 
     private var recentPanel: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    Label(strings.recentlyOpened, systemImage: "clock")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.secondary)
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Label(strings.recentlyOpened, systemImage: "clock")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
 
-                    HStack(spacing: 0) {
-                        Text(strings.pinnedCountPrefix)
-                        Text("\(recentStore.pinnedFolderCount)")
-                            .monospacedDigit()
-                            .frame(width: 18, alignment: .trailing)
-                        Text(strings.pinnedCountSuffix)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .fixedSize()
-
-                    Spacer()
-
-                    Button {
-                        recentStore.movePinned(path: activeRecentPath, by: -1)
-                    } label: {
-                        Image(systemName: "arrow.up")
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!recentStore.canMovePinned(path: activeRecentPath, by: -1))
-                    .help(strings.movePinnedUp)
-
-                    Button {
-                        recentStore.movePinned(path: activeRecentPath, by: 1)
-                    } label: {
-                        Image(systemName: "arrow.down")
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!recentStore.canMovePinned(path: activeRecentPath, by: 1))
-                    .help(strings.movePinnedDown)
+                HStack(spacing: 0) {
+                    Text(strings.pinnedCountPrefix)
+                    Text("\(recentStore.pinnedFolderCount)")
+                        .monospacedDigit()
+                        .frame(width: 18, alignment: .trailing)
+                    Text(strings.pinnedCountSuffix)
                 }
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .fixedSize()
 
+                Spacer()
+
+                Button {
+                    recentStore.movePinned(path: activeRecentPath, by: -1)
+                } label: {
+                    Image(systemName: "arrow.up")
+                }
+                .buttonStyle(.plain)
+                .disabled(!recentStore.canMovePinned(path: activeRecentPath, by: -1))
+                .help(strings.movePinnedUp)
+
+                Button {
+                    recentStore.movePinned(path: activeRecentPath, by: 1)
+                } label: {
+                    Image(systemName: "arrow.down")
+                }
+                .buttonStyle(.plain)
+                .disabled(!recentStore.canMovePinned(path: activeRecentPath, by: 1))
+                .help(strings.movePinnedDown)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+
+            ScrollView {
                 if recentStore.entries.isEmpty {
                     Text(strings.noRecentFolders)
                         .font(.caption)
@@ -277,7 +280,9 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .padding(16)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .contentMargins(.bottom, 16, for: .scrollContent)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.32))
     }
